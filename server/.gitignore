@@ -1,0 +1,6 @@
+.idea
+dist
+node_modules
+schema.json
+config.json
+api.json

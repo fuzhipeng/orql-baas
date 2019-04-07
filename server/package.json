@@ -1,0 +1,23 @@
+{
+  "name": "orql-baas-server",
+  "version": "0.0.1",
+  "main": "index.js",
+  "author": "qiushijie",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "dev": "node ./dist"
+  },
+  "dependencies": {
+    "@koa/cors": "2",
+    "koa": "^2.7.0",
+    "koa-bodyparser": "^4.2.1",
+    "koa-router": "^7.4.0",
+    "orql-executor": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/koa-bodyparser": "^4.2.2",
+    "@types/koa-router": "^7.0.40",
+    "typescript": "^3.4.2"
+  }
+}
