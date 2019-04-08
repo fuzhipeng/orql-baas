@@ -8,13 +8,19 @@ export type Logic = 'and' | 'or';
 const LogicButton = (props: {logic: Logic, onChange: (logic: Logic) => void}) => (
   <div style={{display: 'inline-block'}}>
     <Button
-      onClick={() => props.onChange('and')}
+      onClick={event => {
+        event.stopPropagation();
+        props.onChange('and')
+      }}
       type={props.logic == 'and' ? 'primary' : 'default'}
       size="small">
       and
     </Button>
     <Button
-      onClick={() => props.onChange('or')}
+      onClick={event => {
+        event.stopPropagation();
+        props.onChange('or');
+      }}
       type={props.logic == 'or' ? 'primary' : 'default'}
       size="small">
       or
@@ -38,12 +44,14 @@ export interface LogicGroupProps {
 }
 
 class LogicGroupView extends React.Component<LogicGroupProps> {
-  private handleAddRule = () => {
+  private handleAddRule = (event: React.FormEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
     const {group, onChange} = this.props;
     const newRule: Rule = {op: '=='};
     onChange({...group, rules: [...group.rules, newRule]});
   }
-  private handleAddGroup = () => {
+  private handleAddGroup = (event: React.FormEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
     const {group, onChange} = this.props;
     const newGroup: LogicGroup = {logic: 'and', rules: [], groups: []};
     onChange({...group, groups: [...group.groups, newGroup]});
