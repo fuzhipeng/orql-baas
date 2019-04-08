@@ -15,7 +15,7 @@ export interface ApiConfig {
 export interface Api {
   url: string;
   orql: string;
-  group?: string;
+  group: string;
   comment?: string;
 }
 

@@ -10,7 +10,9 @@ export default class ApiStore {
 
   @action async load() {
     const groups = await httpGetWithData<string[]>('/_edit/apiGroups');
+    const apis = await httpGetWithData<Api[]>('/_edit/apis');
     this.groups.replace(groups!);
+    this.apis.replace(apis!);
   }
 
   @action async addApi(api: Api) {
@@ -19,7 +21,10 @@ export default class ApiStore {
       console.error(`url: ${api.url} exists`);
       return;
     }
-    this.apis.push(api);
+    const res = await httpPost('/_edit/apis', api);
+    if (res.success) {
+      this.apis.push(api);
+    }
   }
 
   @action async addGroup(name: string) {
@@ -67,4 +72,13 @@ export default class ApiStore {
     }
   }
 
+  @action async removeApi(url: string) {
+    const index = this.apis.findIndex(api => api.url == url);
+    if (index >= 0) {
+      const res = await httpDelete(`/_edit/apis/${encodeURIComponent(url)}`);
+      if (res.success) {
+        this.apis.splice(index, 1);
+      }
+    }
+  }
 }

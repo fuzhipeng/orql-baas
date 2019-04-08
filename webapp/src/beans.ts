@@ -28,7 +28,7 @@ export interface Association {
 export interface Api {
   url: string;
   comment?: string;
-  group?: string;
+  group: string;
   orql: string;
 }
 

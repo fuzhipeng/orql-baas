@@ -10,6 +10,8 @@ const { TextArea } = Input;
 
 export interface ApiFormProps extends FormComponentProps {
   schemas: Schema[];
+  groups: string[];
+  currentGroup: string;
 }
 
 interface IState {
@@ -140,11 +142,11 @@ export default Form.create()(class ApiForm extends React.Component<ApiFormProps,
   }
   render() {
     const {op, visual, schemaName, array, selectedKeys, expMap} = this.state;
-    const {form: {getFieldDecorator, setFieldsValue}, schemas} = this.props;
+    const {form: {getFieldDecorator, setFieldsValue}, schemas, groups, currentGroup} = this.props;
     return (
       <Form layout="vertical" {...FormItemLayout}>
         <Row>
-          <Col span={12}>
+          <Col span={8}>
             <Form.Item label="url">
               {getFieldDecorator('url', {
                 rules: [{ required: true, message: '请输入url' }],
@@ -152,7 +154,21 @@ export default Form.create()(class ApiForm extends React.Component<ApiFormProps,
               })(<Input />)}
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={8}>
+            <Form.Item label="分组">
+              {getFieldDecorator('group', {
+                rules: [{ required: true, message: '请选择api分组'}],
+                initialValue: currentGroup
+              })(
+                <Select placeholder="api分组">
+                  {groups.map(group => (
+                    <Select.Option key={group} value={group}>{group}</Select.Option>
+                  ))}
+                </Select>
+              )}
+            </Form.Item>
+          </Col>
+          <Col span={8}>
             <Form.Item label="备注">
               {getFieldDecorator('comment', {
                 rules: [{ required: false, message: '请输入备注' }],
@@ -160,14 +176,12 @@ export default Form.create()(class ApiForm extends React.Component<ApiFormProps,
             </Form.Item>
           </Col>
         </Row>
+        <Form.Item labelCol={{span: 2}} wrapperCol={{span: 20}} label="orql">
+          {getFieldDecorator('orql', {
+            rules: [{ required: true, message: '请输入orql' }],
+          })(<TextArea />)}
+        </Form.Item>
         <Row>
-          <Col span={12}>
-            <Form.Item label="orql">
-              {getFieldDecorator('orql', {
-                rules: [{ required: true, message: '请输入orql' }],
-              })(<TextArea />)}
-            </Form.Item>
-          </Col>
           <Col span={12}>
             <Form.Item label="配置">
               {getFieldDecorator('visual', {

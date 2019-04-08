@@ -7,14 +7,15 @@ import SchemaStore from '../../stores/SchemaStore';
 import {message, Modal} from 'antd';
 import ApiStore from '../../stores/ApiStore';
 import GroupForm from './GroupForm';
+import {Api} from '../../beans';
 
-interface IProps extends RouteComponentProps{
+interface IProps extends RouteComponentProps {
   appStore: AppStore;
   schemaStore: SchemaStore;
   apiStore: ApiStore;
 }
 
-const GroupTitle = (props: {selected: boolean, name: string, onClick: () => void}) => {
+const GroupTitle = (props: { selected: boolean, name: string, onClick: () => void }) => {
   return (
     <div
       onClick={props.onClick}
@@ -30,15 +31,56 @@ const GroupTitle = (props: {selected: boolean, name: string, onClick: () => void
   )
 }
 
+const ApiTitle = (props: { selected: boolean, api: Api, onClick: () => void }) => {
+  return (
+    <div
+      onClick={props.onClick}
+      style={{
+        color: props.selected ? '#1890ff' : '#314659',
+        padding: '5px 20px',
+        cursor: 'pointer'
+      }}>
+      <div style={{fontSize: 12}}>{props.api.url}</div>
+      <div style={{fontSize: 10}}>{props.api.comment}</div>
+    </div>
+  )
+}
+
 interface IState {
   showDialog: 'createApi' | 'createGroup' | 'updateGroup' | 'none';
   currentGroupName?: string;
+  currentApiUrl?: string;
 }
 
 @inject('appStore', 'schemaStore', 'apiStore')
 @observer
 class ApiView extends React.Component<IProps, IState> {
   private menus = [{
+    label: '新建组',
+    onClick: () => this.setState({
+      showDialog: 'createGroup'
+    })
+  }, {
+    label: '编辑组',
+    onClick: () => {
+      const {currentGroupName} = this.state;
+      if (!currentGroupName) return;
+      this.setState({
+        showDialog: 'updateGroup'
+      });
+    }
+  }, {
+    label: '删除组',
+    onClick: () => {
+      const {currentGroupName} = this.state;
+      if (!currentGroupName) return;
+      Modal.confirm({
+        title: '删除分组',
+        content: `确定删除${currentGroupName}分组`,
+        onOk: () => this.handleRemoveGroup(currentGroupName)
+      });
+    }
+  }, {
     label: '新建api',
     onClick: () => this.setState({
       showDialog: 'createApi'
@@ -48,42 +90,13 @@ class ApiView extends React.Component<IProps, IState> {
     onClick: () => console.log('xxxaaa')
   }, {
     label: '删除api',
-    onClick: () => console.log('sss')
-  }, {
-    label: '新建组',
-    onClick: () => this.setState({
-      showDialog: 'createGroup'
-    })
-  }, {
-    label: '编辑组',
     onClick: () => {
-      const {currentGroupName} = this.state;
-      if(!currentGroupName) {
-        Modal.error({
-          title: '错误',
-          content: '无法编辑默认分组'
-        });
-        return;
-      }
-      this.setState({
-        showDialog: 'updateGroup'
-      });
-    }
-  }, {
-    label: '删除组',
-    onClick: () => {
-      const {currentGroupName} = this.state;
-      if (!currentGroupName) {
-        Modal.error({
-          title: '错误',
-          content: '无法删除默认分组'
-        });
-        return;
-      }
+      const {currentApiUrl} = this.state;
+      if (!currentApiUrl) return;
       Modal.confirm({
-        title: '删除分组',
-        content: `确定删除${currentGroupName}分组`,
-        onOk: () => this.handleRemoveGroup(currentGroupName)
+        title: '删除api',
+        content: `确定删除${currentApiUrl}`,
+        onOk: () => this.handleRemoveApi(currentApiUrl)
       });
     }
   }];
@@ -93,20 +106,21 @@ class ApiView extends React.Component<IProps, IState> {
   state: IState = {
     showDialog: 'none'
   }
+
   async componentDidMount() {
     const {appStore, schemaStore, apiStore} = this.props;
     appStore.setAppMenus(this.menus);
     await schemaStore.load();
     await apiStore.load();
   }
+
   handleAddApi = () => {
     const {form} = this.createApiForm.props;
     form.validateFields(async (err, values) => {
       if (err) return;
       const {apiStore} = this.props;
-      const {currentGroupName} = this.state;
-      const {url, comment, orql} = values;
-      await apiStore.addApi({url, comment, orql, group: currentGroupName});
+      const {url, comment, orql, group} = values;
+      await apiStore.addApi({url, comment, orql, group});
       this.setState({
         showDialog: 'none'
       });
@@ -151,7 +165,17 @@ class ApiView extends React.Component<IProps, IState> {
       currentGroupName: undefined
     });
   }
+  handleRemoveApi = async (url: string) => {
+    const {apiStore} = this.props;
+    await apiStore.removeApi(url);
+    this.setState({
+      currentApiUrl: undefined
+    });
+  }
   renderCreateApiForm() {
+    const {apiStore: {groups}} = this.props;
+    const {currentGroupName} = this.state;
+    if (!currentGroupName) return;
     return (
       <Modal
         title="添加api"
@@ -163,11 +187,14 @@ class ApiView extends React.Component<IProps, IState> {
         onOk={this.handleAddApi}
         onCancel={() => this.setState({showDialog: 'none'})}>
         <ApiForm
+          groups={groups}
+          currentGroup={currentGroupName}
           schemas={this.props.schemaStore.schemas}
-          wrappedComponentRef={ref => this.createApiForm = ref} />
+          wrappedComponentRef={ref => this.createApiForm = ref}/>
       </Modal>
     );
   }
+
   renderCreateGroupForm() {
     return (
       <Modal
@@ -181,9 +208,10 @@ class ApiView extends React.Component<IProps, IState> {
       </Modal>
     );
   }
+
   renderUpdateGroupForm() {
     const {currentGroupName} = this.state;
-    if(!currentGroupName) return;
+    if (!currentGroupName) return;
     return (
       <Modal
         title="编辑分组"
@@ -196,25 +224,44 @@ class ApiView extends React.Component<IProps, IState> {
       </Modal>
     );
   }
+
   render() {
-    const {apiStore: {groups}} = this.props;
-    const {currentGroupName} = this.state;
+    const {apiStore: {groups, apis}} = this.props;
+    const {currentGroupName, currentApiUrl} = this.state;
+    const groupApi = apis.filter(api => api.group == currentGroupName) || [];
     return (
       <div style={{display: 'flex'}}>
         {this.renderCreateApiForm()}
         {this.renderCreateGroupForm()}
         {this.renderUpdateGroupForm()}
-        <div style={{width: 200, marginTop: 5, height: '100%', backgroundColor: '#fefefe', borderRight: '1px solid #ebedf0'}}>
-          <GroupTitle
-            selected={currentGroupName == undefined}
-            name='默认'
-            onClick={() => this.setState({currentGroupName: undefined})}/>
+        <div style={{
+          width: 200,
+          marginTop: 5,
+          height: '100%',
+          backgroundColor: '#fefefe',
+          borderRight: '1px solid #ebedf0'
+        }}>
           {groups.map((group, index) => (
             <GroupTitle
               key={index}
               selected={group == currentGroupName}
               name={group}
               onClick={() => this.setState({currentGroupName: group})}/>
+          ))}
+        </div>
+        <div style={{
+          width: 300,
+          marginTop: 5,
+          height: '100%',
+          backgroundColor: '#fefefe',
+          borderRight: '1px solid #ebedf0'
+        }}>
+          {groupApi.map(api => (
+            <ApiTitle
+              key={api.url}
+              selected={currentApiUrl == api.url}
+              api={api}
+              onClick={() => this.setState({currentApiUrl: api.url})}/>
           ))}
         </div>
       </div>

@@ -6,7 +6,7 @@ import Router from 'koa-router';
 import BodyParser from 'koa-bodyparser';
 import Cors from '@koa/cors';
 import OrqlExecutor from 'orql-executor';
-import {Api, ApiConfig, Config, Schema} from './beans';
+import {ApiConfig, Config, Schema} from './beans';
 import {Columns} from 'orql-executor/lib/SchemaManager';
 
 const cwd = process.cwd();
@@ -83,7 +83,7 @@ async function start() {
     orqlExecutor.addSchema(schema.name, columns);
   });
   try {
-    await orqlExecutor.sync('update');
+    await orqlExecutor.sync('create');
   } catch (e) {
     console.error(e);
   }
@@ -283,6 +283,32 @@ async function start() {
       return;
     }
     apiConfig.groups.splice(index, 1);
+    await writeJson(apiPath, apiConfig);
+    responseSuccess(ctx);
+  });
+
+  // 添加api
+  router.post('/_edit/apis', async (ctx) => {
+    const api = ctx.request.body;
+    apiConfig.apis.push(api);
+    await writeJson(apiPath, apiConfig);
+    responseSuccess(ctx);
+  });
+
+  //获取api
+  router.get('/_edit/apis', async (ctx) => {
+    responseSuccess(ctx, apiConfig.apis);
+  });
+
+  // 删除api
+  router.delete('/_edit/apis/:url', async (ctx) => {
+    const {url} = ctx.params;
+    const index = apiConfig.apis.findIndex(api => api.url == url);
+    if (index < 0) {
+      responseError(ctx, `api ${url} not exists`);
+      return;
+    }
+    apiConfig.apis.splice(index, 1);
     await writeJson(apiPath, apiConfig);
     responseSuccess(ctx);
   });
