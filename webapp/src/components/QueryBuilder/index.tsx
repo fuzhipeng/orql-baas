@@ -1,6 +1,7 @@
 import React from 'react';
 import LogicGroupView, {LogicGroup} from './LogicGroupView';
 import {Schema} from '../../beans';
+import {Rule} from './RuleView';
 
 interface QueryBuilderState {
   group: LogicGroup;
@@ -8,6 +9,7 @@ interface QueryBuilderState {
 
 export interface QueryBuilderProps {
   schema: Schema;
+  onChange: (exp: string) => void;
 }
 
 class QueryBuilder extends React.Component<QueryBuilderProps, QueryBuilderState> {
@@ -18,8 +20,28 @@ class QueryBuilder extends React.Component<QueryBuilderProps, QueryBuilderState>
       rules: []
     }
   }
+  private groupToString = (group: LogicGroup) => {
+    const {logic, rules, groups} = group;
+    const exps: string[] = [];
+    rules.forEach(rule => {
+      const exp = this.ruleToString(rule);
+      exp && exps.push(exp);
+    });
+    groups.forEach(child => {
+      const exp = this.groupToString(child);
+      exp && exps.push( '(' + exp + ')');
+    });
+    if (exps.length == 0) return '';
+    return exps.join(` ${logic} `);
+  }
+  private ruleToString = (rule: Rule) => {
+    const {left, op, right} = rule;
+    if (left == undefined || right == undefined) return undefined;
+    return `${rule.left} ${rule.op} ${rule.right}`;
+  }
   private handleChange = (group: LogicGroup) => {
-    console.log(JSON.stringify(group));
+    const exp = this.groupToString(group);
+    this.props.onChange(exp);
     this.setState({
       group
     });

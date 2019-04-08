@@ -1,22 +1,25 @@
 import React from 'react';
-import {Button, Radio} from 'antd';
+import {Button} from 'antd';
 import RuleView, {Rule} from './RuleView';
 import {Schema} from '../../beans';
-
-const RadioButton = Radio.Button;
-const RadioGroup = Radio.Group;
 
 export type Logic = 'and' | 'or';
 
 const LogicButton = (props: {logic: Logic, onChange: (logic: Logic) => void}) => (
-  <RadioGroup
-    value={props.logic}
-    size="small"
-    buttonStyle="solid"
-    onChange={e => props.onChange(e.target.value)}>
-    <RadioButton value="and">and</RadioButton>
-    <RadioButton value="or">or</RadioButton>
-  </RadioGroup>
+  <div style={{display: 'inline-block'}}>
+    <Button
+      onClick={() => props.onChange('and')}
+      type={props.logic == 'and' ? 'primary' : 'default'}
+      size="small">
+      and
+    </Button>
+    <Button
+      onClick={() => props.onChange('or')}
+      type={props.logic == 'or' ? 'primary' : 'default'}
+      size="small">
+      or
+    </Button>
+  </div>
 )
 
 export interface LogicGroup {
