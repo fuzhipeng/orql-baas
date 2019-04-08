@@ -6,7 +6,7 @@ import Router from 'koa-router';
 import BodyParser from 'koa-bodyparser';
 import Cors from '@koa/cors';
 import OrqlExecutor from 'orql-executor';
-import {Api, Config, Schema} from './beans';
+import {Api, ApiConfig, Config, Schema} from './beans';
 import {Columns} from 'orql-executor/lib/SchemaManager';
 
 const cwd = process.cwd();
@@ -91,12 +91,14 @@ async function start() {
   const app = new Koa();
   const router = new Router();
 
+  let apiConfig: ApiConfig = {apis: [], groups: []};
+
   if (!await exists(apiPath)) {
     console.log('api.json not exist');
-    await writeJson(apiPath, []);
+    await writeJson(apiPath, apiConfig);
   }
 
-  const apis: Api[] = await readJson(apiPath);
+  apiConfig = await readJson(apiPath);
 
   router.get('/_edit/schemas', async (ctx) => {
     schemas = await readJson(schemaPath);
@@ -227,6 +229,61 @@ async function start() {
     }
     schema.associations[index] = association;
     await writeJson(schemaPath, schemas);
+    responseSuccess(ctx);
+  });
+
+  // 添加api分组
+  router.post('/_edit/apiGroups', async (ctx) => {
+    const {name} = ctx.request.body;
+    if (apiConfig.groups.find(group => group == name)) {
+      responseError(ctx, `group ${name} exists`);
+      return;
+    }
+    apiConfig.groups.push(name);
+    await writeJson(apiPath, apiConfig);
+    responseSuccess(ctx);
+  });
+
+  // 获取api分组
+  router.get('/_edit/apiGroups', async (ctx) => {
+    responseSuccess(ctx, apiConfig.groups);
+  });
+
+  // 修改api分组
+  router.put('/_edit/apiGroups/:name', async (ctx) => {
+    const old = ctx.params.name;
+    const {name} = ctx.request.body;
+    const index = apiConfig.groups.findIndex(group => group == old);
+    if (index < 0) {
+      responseError(ctx, `group ${old} not exists`);
+      return;
+    }
+    if (apiConfig.groups.find(group => group == name)) {
+      responseError(ctx, `group ${name} exists`);
+      return;
+    }
+    apiConfig.groups[index] = name;
+    apiConfig.apis
+      .filter(api => api.group == old)
+      .forEach(api => api.group = name);
+    await writeJson(apiPath, apiConfig);
+    responseSuccess(ctx);
+  });
+
+  // 删除api分组
+  router.delete('/_edit/apiGroups/:name', async (ctx) => {
+    const old = ctx.params.name;
+    const index = apiConfig.groups.findIndex(group => group == old);
+    if (index < 0) {
+      responseError(ctx, `group ${old} not exists`);
+      return;
+    }
+    if (apiConfig.apis.find(api => api.group == old)) {
+      responseError(ctx, `group ${old} has api`);
+      return;
+    }
+    apiConfig.groups.splice(index, 1);
+    await writeJson(apiPath, apiConfig);
     responseSuccess(ctx);
   });
 

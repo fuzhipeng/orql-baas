@@ -7,9 +7,16 @@ export interface Config {
   orql: ConfigurationOptions;
 }
 
+export interface ApiConfig {
+  groups: string[];
+  apis: Api[];
+}
+
 export interface Api {
   url: string;
   orql: string;
+  group?: string;
+  comment?: string;
 }
 
 export interface Schema {

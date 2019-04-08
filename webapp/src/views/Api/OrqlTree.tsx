@@ -32,7 +32,7 @@ const TreeNodeTitle = (props: {title: string, schema: Schema, path: string, defa
     )}
     title="条件"
     trigger="click">
-    {props.title} {props.defaultExp ? `(${props.defaultExp})` : ''}
+    {props.title} <span style={{position: 'absolute'}}>{props.defaultExp ? `(${props.defaultExp})` : ''}</span>
   </Popover>
 )
 

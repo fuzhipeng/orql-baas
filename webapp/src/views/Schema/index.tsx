@@ -25,6 +25,22 @@ interface IState {
   newAssociation?: Association;
 }
 
+const SchemaTitle = (props: {selected: boolean, name: string, onClick: () => void}) => {
+  return (
+    <div
+      onClick={props.onClick}
+      style={{
+        color: props.selected ? '#1890ff' : '#314659',
+        backgroundColor: props.selected ? '#e6f7ff' : '#fff',
+        borderRight: props.selected ? '3px solid #1890ff' : undefined,
+        padding: '5px 20px',
+        fontSize: 14,
+        cursor: 'pointer'
+      }}
+    >{props.name}</div>
+  )
+}
+
 @inject('appStore', 'schemaStore')
 @observer
 class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
@@ -384,22 +400,13 @@ class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
         {this.renderCreateAssociationDialog()}
         {this.renderUpdateAssociationDialog()}
         <div style={{width: 200, marginTop: 5, height: '100%', backgroundColor: '#fefefe', borderRight: '1px solid #ebedf0'}}>
-          {schemas.map((schema, index) => {
-            const selected = schema.name == currentSchemaName;
-            return (
-              <div
-                onClick={() => this.setState({currentSchemaName: schema.name})}
-                style={{
-                  color: selected ? '#1890ff' : '#314659',
-                  backgroundColor: selected ? '#e6f7ff' : '#fff',
-                  borderRight: selected ? '3px solid #1890ff' : undefined,
-                  padding: '5px 20px',
-                  fontSize: 14,
-                  cursor: 'pointer'
-                }}
-                key={index}>{schema.name}</div>
-            );
-          })}
+          {schemas.map((schema, index) => (
+            <SchemaTitle
+              key={index}
+              selected={schema.name == currentSchemaName}
+              name={schema.name}
+              onClick={() => this.setState({currentSchemaName: schema.name})}/>
+          ))}
         </div>
         <div style={{flex: 1, marginTop: 5}}>
           {this.renderTable()}

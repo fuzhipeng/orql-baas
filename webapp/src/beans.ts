@@ -25,6 +25,13 @@ export interface Association {
   middleKey?: string;
 }
 
+export interface Api {
+  url: string;
+  comment?: string;
+  group?: string;
+  orql: string;
+}
+
 export interface AppMenu {
   label: string;
   onClick: () => void;
