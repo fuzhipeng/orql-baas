@@ -2,6 +2,60 @@ import React from 'react';
 import LogicGroupView, {LogicGroup} from './LogicGroupView';
 import {Schema} from '../../beans';
 import {Rule} from './RuleView';
+import Parser from 'orql-parser';
+import {OrqlExp, OrqlLogicExp, OrqlNestExp, OrqlLogicOp, OrqlCompareExp, OrqlParam, OrqlColumn, OrqlValue, OrqlNull} from 'orql-parser/lib/OrqlNode';
+
+function expToGroup(exp: string): LogicGroup {
+  const node = Parser.parseExp(exp);
+  const result = expNodeToGroup(node);
+  if ('op' in result) {
+    return {logic: 'and', rules: [result], groups: []};
+  }
+  return result as LogicGroup;
+}
+
+function expNodeToGroup(node: OrqlExp): LogicGroup | Rule {
+  if (node instanceof OrqlLogicExp) {
+    const logic = OrqlLogicOp.And ? 'and' : 'or';
+    const group: LogicGroup = {logic, groups: [], rules: []};
+    const left = expNodeToGroup(node.left);
+    const right = expNodeToGroup(node.right);
+    if ('op' in left) {
+      group.rules.push(left);
+    } else if ('logic' in left) {
+      group.groups.push(left);
+    }
+    if ('op' in right) {
+      group.rules.push(right);
+    } else if ('logic' in right) {
+      group.groups.push(right);
+    }
+  } else if (node instanceof OrqlNestExp) {
+    const group: LogicGroup = {logic: 'and', groups: [], rules: []};
+    const child = expNodeToGroup(node.exp);
+    if ('op' in child) {
+      group.rules.push(child);
+    } else if ('logic' in child) {
+      group.groups.push(child);
+    }
+    return group;
+  } else if (node instanceof OrqlCompareExp) {
+    const rule: Rule = {left: node.left.name, op: node.op};
+    if (node.right instanceof OrqlParam) {
+      rule.right = '$' + node.right.name;
+    } else if (node.right instanceof OrqlColumn) {
+      rule.right = node.right.name;
+    } else if (node.right instanceof OrqlValue) {
+      if (node.right instanceof OrqlNull) {
+        rule.right = 'null';
+      } else {
+        rule.right = node.right.value;
+      }
+    }
+    return rule;
+  }
+  throw new Error('');
+}
 
 interface QueryBuilderState {
   group: LogicGroup;
@@ -9,16 +63,15 @@ interface QueryBuilderState {
 
 export interface QueryBuilderProps {
   schema: Schema;
+  defaultExp?: string;
   onChange: (exp: string) => void;
 }
 
 class QueryBuilder extends React.Component<QueryBuilderProps, QueryBuilderState> {
   state: QueryBuilderState = {
-    group: {
-      logic: 'and',
-      groups: [],
-      rules: []
-    }
+    group: this.props.defaultExp
+      ? expToGroup(this.props.defaultExp)
+      : {logic: 'and', groups: [], rules: []}
   }
   private groupToString = (group: LogicGroup) => {
     const {logic, rules, groups} = group;

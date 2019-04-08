@@ -9,4 +9,4 @@ export const RefTypes = ['belongsTo', 'hasOne', 'hasMany', 'belongsToMany'];
 
 export const OrqlOps = ['query', 'add', 'count', 'update', 'delete'];
 
-export const RuleOps = ['==', '>', '<', '>=', '<=', '!=', 'like'];
+export const RuleOps = ['=', '>', '<', '>=', '<=', '!=', 'like'];

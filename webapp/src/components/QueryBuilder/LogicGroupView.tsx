@@ -47,7 +47,7 @@ class LogicGroupView extends React.Component<LogicGroupProps> {
   private handleAddRule = (event: React.FormEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     const {group, onChange} = this.props;
-    const newRule: Rule = {op: '=='};
+    const newRule: Rule = {op: '='};
     onChange({...group, rules: [...group.rules, newRule]});
   }
   private handleAddGroup = (event: React.FormEvent<HTMLButtonElement>) => {

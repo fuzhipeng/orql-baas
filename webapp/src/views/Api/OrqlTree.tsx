@@ -18,7 +18,7 @@ interface IState {
 const TreeNodeTitle = (props: {title: string, schema: Schema}) => (
   <Popover
     placement="right"
-    content={<QueryBuilder schema={props.schema} onChange={exp => console.log(exp)}/>}
+    content={<QueryBuilder defaultExp="id = $id" schema={props.schema} onChange={exp => console.log(exp)}/>}
     title="条件"
     trigger="click">
     {props.title}
