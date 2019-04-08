@@ -9,14 +9,14 @@ function expToGroup(exp: string): LogicGroup {
   const node = Parser.parseExp(exp);
   const result = expNodeToGroup(node);
   if ('op' in result) {
-    return {logic: 'and', rules: [result], groups: []};
+    return {logic: '&&', rules: [result], groups: []};
   }
   return result as LogicGroup;
 }
 
 function expNodeToGroup(node: OrqlExp): LogicGroup | Rule {
   if (node instanceof OrqlLogicExp) {
-    const logic = OrqlLogicOp.And ? 'and' : 'or';
+    const logic = OrqlLogicOp.And ? '&&' : '||';
     const group: LogicGroup = {logic, groups: [], rules: []};
     const left = expNodeToGroup(node.left);
     const right = expNodeToGroup(node.right);
@@ -31,7 +31,7 @@ function expNodeToGroup(node: OrqlExp): LogicGroup | Rule {
       group.groups.push(right);
     }
   } else if (node instanceof OrqlNestExp) {
-    const group: LogicGroup = {logic: 'and', groups: [], rules: []};
+    const group: LogicGroup = {logic: '&&', groups: [], rules: []};
     const child = expNodeToGroup(node.exp);
     if ('op' in child) {
       group.rules.push(child);
@@ -71,7 +71,7 @@ class QueryBuilder extends React.Component<QueryBuilderProps, QueryBuilderState>
   state: QueryBuilderState = {
     group: this.props.defaultExp
       ? expToGroup(this.props.defaultExp)
-      : {logic: 'and', groups: [], rules: []}
+      : {logic: '&&', groups: [], rules: []}
   }
   private groupToString = (group: LogicGroup) => {
     const {logic, rules, groups} = group;

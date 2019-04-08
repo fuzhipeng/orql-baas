@@ -1,91 +1,125 @@
 import React from 'react';
-import {Button, Popover, Tree} from 'antd';
-import {Schema} from '../../beans';
+import {Popover, Tree} from 'antd';
+import {Association, Schema} from '../../beans';
 import QueryBuilder from '../../components/QueryBuilder';
 
 const {TreeNode} = Tree;
+
+export type ExpMap = {[key: string]: string};
 
 export interface OrqlTreeProps {
   schemas: Schema[];
   op: string;
   schemaName?: string;
+  selectedKeys: string[];
+  onChangeSelectKeys: (keys: string[]) => void;
+  expMap: ExpMap;
+  onChangeExpMap: (expMap: ExpMap) => void;
 }
 
-interface IState {
-  expandRefs: string[];
+function isArray(association: Association) {
+  return association.type == 'hasMany' || association.type == 'belongsToMany';
 }
 
-const TreeNodeTitle = (props: {title: string, schema: Schema}) => (
+const TreeNodeTitle = (props: {title: string, schema: Schema, path: string, defaultExp?: string, onChange: (exp) => void}) => (
   <Popover
     placement="right"
-    content={<QueryBuilder defaultExp="id = $id" schema={props.schema} onChange={exp => console.log(exp)}/>}
+    content={(
+      <QueryBuilder
+        defaultExp={props.defaultExp}
+        schema={props.schema}
+        onChange={props.onChange}/>
+    )}
     title="条件"
     trigger="click">
-    {props.title}
+    {props.title} {props.defaultExp ? `(${props.defaultExp})` : ''}
   </Popover>
 )
 
-class OrqlTree extends React.Component<OrqlTreeProps, IState> {
-  state: IState = {
-    expandRefs: []
-  }
-  handleCheck = (keys: string[]) => {
-    const {op} = this.props;
-    if (op != 'query' && op != 'count') return;
-    this.setState({
-      expandRefs: keys.filter(key => key.indexOf('ref') == 0)
-    });
+class OrqlTree extends React.Component<OrqlTreeProps> {
+  handleCheck = (keys: any) => {
+    const {op, onChangeSelectKeys} = this.props;
+    // console.log(keys.checked);
+    onChangeSelectKeys(keys.checked);
   }
   renderTree() {
-    const {schemas, schemaName} = this.props;
+    const {schemas, schemaName, selectedKeys, expMap, onChangeExpMap} = this.props;
     if (!schemaName) return;
-    const {expandRefs} = this.state;
     const schema = schemas.find(schema => schema.name == schemaName)!;
     return (
       <Tree
         checkable
         defaultExpandAll
-        autoExpandParent
-        onCheck={keys => this.handleCheck(keys as string[])}>
-        <TreeNode key={schema.name} title={<TreeNodeTitle schema={schema} title={schema.name} />}>
+        checkStrictly
+        onCheck={keys => this.handleCheck(keys)}>
+        <TreeNode key={schema.name} title={(
+          <TreeNodeTitle
+            path={schemaName}
+            onChange={exp => onChangeExpMap({...expMap, [schemaName]: exp})}
+            defaultExp={expMap[schemaName]}
+            schema={schema}
+            title={schemaName} />
+        )}>
           {schema.columns.map(column => (
             <TreeNode
               key={`column.${schema.name}.${column.name}`}
               title={column.name}/>
           ))}
-          {schema.associations.map(association => (
-            expandRefs.indexOf(`ref.${schema.name}.${association.name}`) >= 0
-              ? this.renderRefTree(schema.name, association.name, association.refName)
+          {schema.associations.map(association => {
+            const array = isArray(association);
+            const key = `${array ? 'array' : 'object'}.${schema.name}.${association.name}`;
+            return selectedKeys.indexOf(key) >= 0
+              ? this.renderRefTree(
+                schema.name,
+                isArray(association),
+                association.name,
+                association.refName)
               : (
                 <TreeNode
                   isLeaf
-                  key={`ref.${schema.name}.${association.name}`}
-                  title={association.name} />
+                  key={key}
+                  title={(
+                    <TreeNodeTitle
+                      defaultExp={expMap[key]}
+                      path={key}
+                      onChange={exp => onChangeExpMap({...expMap, [key]: exp})}
+                      title={association.name}
+                      schema={schemas.find(schema => schema.name == association.refName)!}/>
+                  )} />
               )
-          ))}
+          })}
         </TreeNode>
       </Tree>
     );
   }
-  renderRefTree(parentKey: string, refName: string, schemaName: string) {
-    // console.log('renderRefTree', 'parentKey', parentKey, 'schemaName', schemaName);
-    const {schemas} = this.props;
-    const {expandRefs} = this.state;
+  renderRefTree(parentKey: string, array: boolean, refName: string, schemaName: string) {
+    const {schemas, selectedKeys, expMap, onChangeExpMap} = this.props;
     const schema = schemas.find(schema => schema.name == schemaName)!;
+    const key = `${array ? 'array' : 'object'}.${parentKey}.${refName}`;
     return (
-      <TreeNode key={`ref.${parentKey}.${refName}`} title={schema.name}>
+      <TreeNode key={key} title={(
+        <TreeNodeTitle
+          path={key}
+          defaultExp={expMap[key]}
+          onChange={exp => onChangeExpMap({...expMap, [key]: exp})}
+          title={schema.name}
+          schema={schema}/>
+      )}>
         {schema.columns.map(column => (
           <TreeNode
             key={`column.${parentKey}.${schema.name}.${column.name}`}
             title={column.name}/>
         ))}
         {schema.associations.map(association => (
-          expandRefs.indexOf(`ref.${parentKey}.${schema.name}.${association.name}`) >= 0
-            ? this.renderRefTree(`${parentKey}.${schema.name}`, association.name, association.refName)
+          selectedKeys.indexOf(key) >= 0
+            ? this.renderRefTree(
+              `${parentKey}.${schema.name}`,
+            isArray(association),
+            association.name,
+            association.refName)
             : (
               <TreeNode
-                isLeaf
-                key={`ref.${parentKey}.${schema.name}.${association.name}`}
+                key={key}
                 title={association.name}>
               </TreeNode>
             )

@@ -3,25 +3,25 @@ import {Button} from 'antd';
 import RuleView, {Rule} from './RuleView';
 import {Schema} from '../../beans';
 
-export type Logic = 'and' | 'or';
+export type Logic = '&&' | '||';
 
 const LogicButton = (props: {logic: Logic, onChange: (logic: Logic) => void}) => (
   <div style={{display: 'inline-block'}}>
     <Button
       onClick={event => {
         event.stopPropagation();
-        props.onChange('and')
+        props.onChange('&&')
       }}
-      type={props.logic == 'and' ? 'primary' : 'default'}
+      type={props.logic == '&&' ? 'primary' : 'default'}
       size="small">
       and
     </Button>
     <Button
       onClick={event => {
         event.stopPropagation();
-        props.onChange('or');
+        props.onChange('||');
       }}
-      type={props.logic == 'or' ? 'primary' : 'default'}
+      type={props.logic == '||' ? 'primary' : 'default'}
       size="small">
       or
     </Button>
@@ -53,7 +53,7 @@ class LogicGroupView extends React.Component<LogicGroupProps> {
   private handleAddGroup = (event: React.FormEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     const {group, onChange} = this.props;
-    const newGroup: LogicGroup = {logic: 'and', rules: [], groups: []};
+    const newGroup: LogicGroup = {logic: '&&', rules: [], groups: []};
     onChange({...group, groups: [...group.groups, newGroup]});
   }
   private handleChangeChildGroup = (child: LogicGroup, index: number) => {
