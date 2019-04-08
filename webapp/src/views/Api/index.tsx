@@ -69,7 +69,6 @@ class ApiView extends React.Component<IProps, IState> {
   render() {
     return (
       <div>
-        <QueryBuilder />
         {this.renderCreateApiForm()}
       </div>
     );

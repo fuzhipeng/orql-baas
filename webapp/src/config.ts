@@ -8,3 +8,5 @@ export const ColumnTypes = ['int', 'long', 'double', 'float', 'string', 'date', 
 export const RefTypes = ['belongsTo', 'hasOne', 'hasMany', 'belongsToMany'];
 
 export const OrqlOps = ['query', 'add', 'count', 'update', 'delete'];
+
+export const RuleOps = ['==', '>', '<', '>=', '<=', '!=', 'like'];

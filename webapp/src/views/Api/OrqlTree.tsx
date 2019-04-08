@@ -1,6 +1,7 @@
 import React from 'react';
 import {Button, Popover, Tree} from 'antd';
 import {Schema} from '../../beans';
+import QueryBuilder from '../../components/QueryBuilder';
 
 const {TreeNode} = Tree;
 
@@ -14,13 +15,13 @@ interface IState {
   expandRefs: string[];
 }
 
-const TreeNodeTitle = (props: {title: string}) => (
+const TreeNodeTitle = (props: {title: string, schema: Schema}) => (
   <Popover
     placement="right"
-    content={<Button type="primary">按钮</Button>}
+    content={<QueryBuilder schema={props.schema}/>}
     title="条件"
     trigger="click">
-    <span>{props.title}</span>
+    {props.title}
   </Popover>
 )
 
@@ -45,9 +46,8 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
         checkable
         defaultExpandAll
         autoExpandParent
-        onSelect={keys => console.log(keys)}
         onCheck={keys => this.handleCheck(keys as string[])}>
-        <TreeNode key={schema.name} title={<TreeNodeTitle title={schema.name} />}>
+        <TreeNode key={schema.name} title={<TreeNodeTitle schema={schema} title={schema.name} />}>
           {schema.columns.map(column => (
             <TreeNode
               key={`column.${schema.name}.${column.name}`}
