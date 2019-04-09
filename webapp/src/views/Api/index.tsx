@@ -47,7 +47,7 @@ const ApiTitle = (props: { selected: boolean, api: Api, onClick: () => void }) =
 }
 
 interface IState {
-  showDialog: 'createApi' | 'createGroup' | 'updateGroup' | 'none';
+  showDialog: 'createApi' | 'createGroup' | 'updateGroup' | 'updateApi' | 'none';
   currentGroupName?: string;
   currentApiUrl?: string;
 }
@@ -87,7 +87,13 @@ class ApiView extends React.Component<IProps, IState> {
     })
   }, {
     label: '编辑api',
-    onClick: () => console.log('xxxaaa')
+    onClick: () => {
+      const {currentGroupName} = this.state;
+      if (!currentGroupName) return;
+      this.setState({
+        showDialog: 'updateApi'
+      });
+    }
   }, {
     label: '删除api',
     onClick: () => {
@@ -103,6 +109,7 @@ class ApiView extends React.Component<IProps, IState> {
   private createApiForm?: any;
   private createGroupForm?: any;
   private updateGroupForm?: any;
+  private updateApiForm?: any;
   state: IState = {
     showDialog: 'none'
   }
@@ -126,6 +133,22 @@ class ApiView extends React.Component<IProps, IState> {
       });
     });
   }
+
+  handleUpdateApi = () => {
+    const {form} = this.updateApiForm.props;
+    form.validateFields(async (err, values) => {
+      if (err) return;
+      const {apiStore} = this.props;
+      const {currentApiUrl} = this.state;
+      const {url, comment, orql, group} = values;
+      await apiStore.updateApi(currentApiUrl!, {url, comment, orql, group});
+      this.setState({
+        showDialog: 'none',
+        currentApiUrl: url
+      });
+    });
+  }
+
   handleAddGroup = () => {
     const {form} = this.createGroupForm.props;
     form.validateFields(async (err, values) => {
@@ -195,6 +218,31 @@ class ApiView extends React.Component<IProps, IState> {
     );
   }
 
+  renderUpdateApiForm() {
+    const {apiStore: {groups, apis}} = this.props;
+    const {currentGroupName, currentApiUrl} = this.state;
+    if (!currentGroupName || !currentApiUrl) return;
+    const api = apis.find(api => api.url == currentApiUrl);
+    return (
+      <Modal
+        title="编辑api"
+        visible={this.state.showDialog == 'updateApi'}
+        okText="确定"
+        cancelText="取消"
+        width={800}
+        style={{top: 20}}
+        onOk={this.handleUpdateApi}
+        onCancel={() => this.setState({showDialog: 'none'})}>
+        <ApiForm
+          api={api}
+          groups={groups}
+          currentGroup={currentGroupName}
+          schemas={this.props.schemaStore.schemas}
+          wrappedComponentRef={ref => this.updateApiForm = ref}/>
+      </Modal>
+    );
+  }
+
   renderCreateGroupForm() {
     return (
       <Modal
@@ -232,6 +280,7 @@ class ApiView extends React.Component<IProps, IState> {
     return (
       <div style={{display: 'flex'}}>
         {this.renderCreateApiForm()}
+        {this.renderUpdateApiForm()}
         {this.renderCreateGroupForm()}
         {this.renderUpdateGroupForm()}
         <div style={{

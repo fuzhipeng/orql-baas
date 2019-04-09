@@ -313,6 +313,20 @@ async function start() {
     responseSuccess(ctx);
   });
 
+  // 修改api
+  router.put('/_edit/apis/:url', async (ctx) => {
+    const {url} = ctx.params;
+    const api = ctx.request.body;
+    const index = apiConfig.apis.findIndex(api => api.url == url);
+    if (index < 0) {
+      responseError(ctx, `api ${url} not exists`);
+      return;
+    }
+    apiConfig.apis[index] = api;
+    await writeJson(apiPath, apiConfig);
+    responseSuccess(ctx);
+  });
+
   app.use(Cors());
   app.use(BodyParser());
   app.use(router.routes());

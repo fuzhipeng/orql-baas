@@ -51,6 +51,7 @@ class OrqlTree extends React.Component<OrqlTreeProps> {
         checkable
         defaultExpandAll
         checkStrictly
+        checkedKeys={selectedKeys}
         onCheck={keys => this.handleCheck(keys)}>
         <TreeNode key={schema.name} title={(
           <TreeNodeTitle

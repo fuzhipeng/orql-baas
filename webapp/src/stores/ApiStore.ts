@@ -27,6 +27,19 @@ export default class ApiStore {
     }
   }
 
+  @action async updateApi(old: string, api: Api) {
+    console.log('updateApi', 'old', old, 'api', api);
+    const index = this.apis.findIndex(api => api.url == old);
+    if (index < 0) {
+      console.log(`url: ${old} not exists`);
+      return;
+    }
+    const res = await httpPut(`/_edit/apis/${encodeURIComponent(old)}`, api);
+    if (res.success) {
+      this.apis[index] = api;
+    }
+  }
+
   @action async addGroup(name: string) {
     console.log('group', name);
     if (this.groups.find(group => group == name)) {
