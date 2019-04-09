@@ -101,16 +101,39 @@ async function start() {
   apiConfig = await readJson(apiPath);
 
   router.all('/*', async (ctx, next) => {
-    const {url} = ctx.request;
-    const _url = url.indexOf('?') > 0 ? url.substr(0, url.indexOf('?')) : url;
-    console.log('url', _url);
-    const index = apiConfig.apis.findIndex(api => api.url == _url);
+    const index = apiConfig.apis.findIndex(api => api.url == ctx.request.path);
     if (index < 0) {
       return next();
     }
+    const {page, size, ...other} = ctx.request.query;
+    const params = {...other, ...ctx.request.body};
     const {orql} = apiConfig.apis[index];
+    const array = /\s*(\S+)\s/.exec(orql);
+    if (!array) {
+      responseError(ctx, `orql ${orql} error`);
+      return;
+    }
+    const op = array[1];
     const session = await orqlExecutor.newSession();
-    const result = await session.query(orql, {});
+    let result;
+    switch (op) {
+      case 'query':
+        const options = page && size ? {offset: (page - 1) * size, size} : {};
+        result = await session.query(orql, params, options);
+        break;
+      case 'count':
+        result = await session.query(orql, params);
+        break;
+      case 'add':
+        result = await session.add(orql, params);
+        break;
+      case 'update':
+        result = await session.update(orql, params);
+        break;
+      case 'delete':
+        result = await session.delete(orql, params);
+        break;
+    }
     responseSuccess(ctx, result);
   });
 

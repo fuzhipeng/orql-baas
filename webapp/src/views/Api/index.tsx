@@ -4,7 +4,7 @@ import {inject, observer} from 'mobx-react';
 import AppStore from '../../stores/AppStore';
 import ApiForm from './ApiForm';
 import SchemaStore from '../../stores/SchemaStore';
-import {Button, message, Modal} from 'antd';
+import {Button, Empty, message, Modal, Table} from 'antd';
 import ApiStore from '../../stores/ApiStore';
 import GroupForm from './GroupForm';
 import {Api} from '../../beans';
@@ -206,7 +206,10 @@ class ApiView extends React.Component<IProps, IState> {
       if (err) return;
       const {method, url, data} = values;
       console.log(method, url, data);
-      const result = await submitUrl(method, url, data);
+      this.setState({
+        submitResult: undefined
+      });
+      const result = await submitUrl(method, url, data ? JSON.parse(data): null);
       console.log('result', result);
       this.setState({
         submitResult: result
@@ -303,19 +306,42 @@ class ApiView extends React.Component<IProps, IState> {
         <p>url: {api.url}</p>
         <p>orql: {api.orql}</p>
         <p>备注: {api.comment}</p>
-        <UrlTestForm wrappedComponentRef={ref => this.urlTestForm = ref} api={api}/>
-        {submitResult && (
-          <p>结果: {JSON.stringify(submitResult)}</p>
-        )}
-        <Button onClick={this.handleSubmitUrl}>提交</Button>
+        <div style={{marginTop: 20}}>
+          <UrlTestForm wrappedComponentRef={ref => this.urlTestForm = ref} api={api}/>
+        </div>
+        <Button type="primary" onClick={this.handleSubmitUrl}>提交</Button>
+        <div style={{marginTop: 20}}>
+          {this.renderResult()}
+        </div>
       </div>
+    );
+  }
+
+  renderResult() {
+    const {submitResult} = this.state;
+    if (!submitResult) return;
+    if (submitResult.data instanceof Array && submitResult.data.length > 0) {
+      const columns = Object.keys(submitResult.data[0]).map(key => ({
+        title: key,
+        dataIndex: key,
+      }));
+      return (
+        <Table
+          columns={columns}
+          dataSource={submitResult.data}
+          rowKey={(record, index) => index.toString()}
+          pagination={false} />
+      );
+    }
+    return (
+      <p>结果: {JSON.stringify(submitResult, null, 2)}</p>
     );
   }
 
   render() {
     const {apiStore: {groups, apis}} = this.props;
     const {currentGroupName, currentApiUrl} = this.state;
-    const groupApi = apis.filter(api => api.group == currentGroupName) || [];
+    const groupApi = apis.filter(api => api.group == currentGroupName);
     return (
       <div style={{display: 'flex'}}>
         {this.renderCreateApiForm()}
@@ -334,8 +360,7 @@ class ApiView extends React.Component<IProps, IState> {
               key={index}
               selected={group == currentGroupName}
               name={group}
-              onClick={() => this.setState({currentGroupName: group})}/>
-          ))}
+              onClick={() => this.setState({currentGroupName: group})}/>))}
         </div>
         <div style={{
           width: 300,
@@ -344,13 +369,15 @@ class ApiView extends React.Component<IProps, IState> {
           backgroundColor: '#fefefe',
           borderRight: '1px solid #ebedf0'
         }}>
-          {groupApi.map(api => (
-            <ApiTitle
-              key={api.url}
-              selected={currentApiUrl == api.url}
-              api={api}
-              onClick={() => this.setState({currentApiUrl: api.url})}/>
-          ))}
+          {groupApi.length > 0
+            ? groupApi.map(api => (
+              <ApiTitle
+                key={api.url}
+                selected={currentApiUrl == api.url}
+                api={api}
+                onClick={() => this.setState({currentApiUrl: api.url})}/>
+            ))
+            : <Empty />}
         </div>
         <div style={{flex: 1}}>
           {this.renderTest()}

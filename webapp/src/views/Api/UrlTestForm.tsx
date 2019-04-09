@@ -11,6 +11,16 @@ export interface UrlTestFormProps extends FormComponentProps {
 }
 
 export default Form.create()(class UrlTestForm extends React.Component<UrlTestFormProps> {
+  componentWillReceiveProps(nextProps: UrlTestFormProps) {
+    const {form: {setFieldsValue}, api} = nextProps;
+    if (api.url != this.props.api.url) {
+      setFieldsValue({
+        url: api.url,
+        method: 'post',
+        data: ''
+      });
+    }
+  }
   render() {
     const {form: {getFieldDecorator, setFieldsValue}, api} = this.props;
     return (
