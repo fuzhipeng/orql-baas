@@ -100,6 +100,20 @@ async function start() {
 
   apiConfig = await readJson(apiPath);
 
+  router.all('/*', async (ctx, next) => {
+    const {url} = ctx.request;
+    const _url = url.indexOf('?') > 0 ? url.substr(0, url.indexOf('?')) : url;
+    console.log('url', _url);
+    const index = apiConfig.apis.findIndex(api => api.url == _url);
+    if (index < 0) {
+      return next();
+    }
+    const {orql} = apiConfig.apis[index];
+    const session = await orqlExecutor.newSession();
+    const result = await session.query(orql, {});
+    responseSuccess(ctx, result);
+  });
+
   router.get('/_edit/schemas', async (ctx) => {
     schemas = await readJson(schemaPath);
     responseSuccess(ctx, schemas);

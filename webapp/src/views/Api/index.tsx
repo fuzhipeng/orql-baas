@@ -4,10 +4,12 @@ import {inject, observer} from 'mobx-react';
 import AppStore from '../../stores/AppStore';
 import ApiForm from './ApiForm';
 import SchemaStore from '../../stores/SchemaStore';
-import {message, Modal} from 'antd';
+import {Button, message, Modal} from 'antd';
 import ApiStore from '../../stores/ApiStore';
 import GroupForm from './GroupForm';
 import {Api} from '../../beans';
+import UrlTestForm from './UrlTestForm';
+import {submitUrl} from '../../utils/network';
 
 interface IProps extends RouteComponentProps {
   appStore: AppStore;
@@ -50,6 +52,7 @@ interface IState {
   showDialog: 'createApi' | 'createGroup' | 'updateGroup' | 'updateApi' | 'none';
   currentGroupName?: string;
   currentApiUrl?: string;
+  submitResult?: any;
 }
 
 @inject('appStore', 'schemaStore', 'apiStore')
@@ -110,6 +113,7 @@ class ApiView extends React.Component<IProps, IState> {
   private createGroupForm?: any;
   private updateGroupForm?: any;
   private updateApiForm?: any;
+  private urlTestForm?: any;
   state: IState = {
     showDialog: 'none'
   }
@@ -195,6 +199,21 @@ class ApiView extends React.Component<IProps, IState> {
       currentApiUrl: undefined
     });
   }
+
+  handleSubmitUrl = () => {
+    const {form} = this.urlTestForm.props;
+    form.validateFields(async (err, values) => {
+      if (err) return;
+      const {method, url, data} = values;
+      console.log(method, url, data);
+      const result = await submitUrl(method, url, data);
+      console.log('result', result);
+      this.setState({
+        submitResult: result
+      });
+    });
+  }
+
   renderCreateApiForm() {
     const {apiStore: {groups}} = this.props;
     const {currentGroupName} = this.state;
@@ -273,6 +292,26 @@ class ApiView extends React.Component<IProps, IState> {
     );
   }
 
+  renderTest() {
+    const {currentApiUrl, submitResult} = this.state;
+    if (!currentApiUrl) return;
+    const {apiStore: {apis}} = this.props;
+    const api = apis.find(api => api.url == currentApiUrl);
+    if (!api) return;
+    return (
+      <div style={{padding: 10}}>
+        <p>url: {api.url}</p>
+        <p>orql: {api.orql}</p>
+        <p>备注: {api.comment}</p>
+        <UrlTestForm wrappedComponentRef={ref => this.urlTestForm = ref} api={api}/>
+        {submitResult && (
+          <p>结果: {JSON.stringify(submitResult)}</p>
+        )}
+        <Button onClick={this.handleSubmitUrl}>提交</Button>
+      </div>
+    );
+  }
+
   render() {
     const {apiStore: {groups, apis}} = this.props;
     const {currentGroupName, currentApiUrl} = this.state;
@@ -312,6 +351,9 @@ class ApiView extends React.Component<IProps, IState> {
               api={api}
               onClick={() => this.setState({currentApiUrl: api.url})}/>
           ))}
+        </div>
+        <div style={{flex: 1}}>
+          {this.renderTest()}
         </div>
       </div>
     );
