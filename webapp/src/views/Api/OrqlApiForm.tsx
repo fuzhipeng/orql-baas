@@ -3,9 +3,9 @@ import React from 'react';
 import {FormComponentProps} from 'antd/lib/form';
 import {FormItemLayout, OrqlOps} from '../../config';
 import {Api, Association, Schema} from '../../beans';
-import OrqlTree, {ExpMap} from './OrqlTree';
+import OrqlTree, {ExpMap, getExpAndOrder, OrderMap} from './OrqlTree';
 import Parser from 'orql-parser';
-import {OrqlNode, OrqlExp, OrqlItem, OrqlLogicExp, OrqlLogicOp, OrqlNestExp, OrqlCompareExp, OrqlParam, OrqlValue, OrqlColumn, OrqlNull} from 'orql-parser/lib/OrqlNode';
+import {OrqlNode, OrqlExp, OrqlItem, OrqlLogicExp, OrqlLogicOp, OrqlNestExp, OrqlCompareExp, OrqlParam, OrqlValue, OrqlColumn, OrqlNull, OrqlOrder} from 'orql-parser/lib/OrqlNode';
 
 const { TextArea } = Input;
 
@@ -23,6 +23,7 @@ interface IState {
   schemaName?: string;
   selectedKeys: string[];
   expMap: ExpMap;
+  orderMap: OrderMap;
 }
 
 interface KeyTmp {
@@ -34,6 +35,7 @@ interface SelectItem {
   name: string;
   array: boolean;
   exp?: string;
+  order?: string;
   columns: string[];
   children: SelectItem[];
 }
@@ -67,9 +69,14 @@ function orqlExpToString(orqlExp: OrqlExp): string {
   throw new Error('');
 }
 
+function orqlOrdersToString(orders: OrqlOrder[]): string {
+  return 'order ' + orders.map(order => `${order.columns.map(column => column.name).join(' ')} ${order.sort}`).join(', ');
+}
+
 function selectItemToOrql(selectItem: SelectItem): string {
   let orql = selectItem.name;
-  if (selectItem.exp) orql += '(' + selectItem.exp + ')';
+  // if (selectItem.exp) orql += '(' + selectItem.exp + ')';
+  orql += getExpAndOrder(selectItem.exp, selectItem.order);
   // 全放一个数组先
   let childOrqlArr = [
     ...selectItem.columns,
@@ -101,10 +108,11 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
     return this.props.schemas.find(schema => schema.name == name)!
   }
 
-  private getOrqlParseObject = (orql?: string): {selectedKeys: string[], expMap: ExpMap, tree?: OrqlNode} => {
+  private getOrqlParseObject = (orql?: string): {selectedKeys: string[], expMap: ExpMap, orderMap: OrderMap, tree?: OrqlNode} => {
     const selectedKeys: string[] = [];
     const expMap: ExpMap = {};
-    if (!orql) return {selectedKeys, expMap};
+    const orderMap: OrderMap = {};
+    if (!orql) return {selectedKeys, expMap, orderMap};
     const orqlTree = Parser.parse(orql);
     const root = orqlTree.item;
     // 获取root
@@ -119,6 +127,9 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
       if (item.where && item.where.exp) {
         // 获取exp
         expMap[path] = orqlExpToString(item.where.exp);
+      }
+      if (item.where && item.where.orders && item.where.orders.length > 0) {
+        orderMap[path] = orqlOrdersToString(item.where.orders);
       }
       if (item.children) {
         for (const childItem of item.children) {
@@ -142,7 +153,7 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
         }
       }
     }
-    return {selectedKeys, expMap, tree: orqlTree};
+    return {selectedKeys, expMap, orderMap, tree: orqlTree};
   }
 
   private orql = this.props.api ? this.props.api.orql : undefined;
@@ -157,6 +168,7 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
     array: this.root ? this.root.isArray : false,
     selectedKeys: this.parseObject.selectedKeys,
     expMap: this.parseObject.expMap,
+    orderMap: this.parseObject.orderMap,
     schemaName: this.root ? this.root.name : undefined
   }
 
@@ -181,7 +193,7 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
   }
   private genOrql = () => {
     const {form: {setFieldsValue}} = this.props;
-    const {op, selectedKeys, expMap, schemaName, array} = this.state;
+    const {op, selectedKeys, expMap, orderMap, schemaName, array} = this.state;
     if (selectedKeys.length == 0) return;
     const keyTmps: KeyTmp[] = [];
     // 先切割缓存起来
@@ -201,7 +213,8 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
       array,
       columns: [],
       children: [],
-      exp: expMap[schemaName!]
+      exp: expMap[schemaName!],
+      order: orderMap[schemaName!]
     };
     for (let i = 1; i < keyTmps.length; i ++) {
       const keyTmp = keyTmps[i];
@@ -212,20 +225,19 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
       const type = keyTmp.arr[0];
       // 名称
       const name = keyTmp.arr[keyTmp.arr.length - 1];
+      // 根据key路径把keys exp order放回去
       if (type == 'array') {
-        const exp = expMap[keyTmp.key];
         parent.children.push({
           array: true,
           name,
-          exp,
+          exp: expMap[keyTmp.key],
           children: [],
           columns: []
         });
       } else if (type == 'object') {
-        const exp = expMap[keyTmp.key];
         parent.children.push({
           array: false,
-          exp,
+          exp: expMap[keyTmp.key],
           name,
           children: [],
           columns: []
@@ -243,6 +255,7 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
       const parserObject = this.getOrqlParseObject(orql);
       this.setState({
         expMap: parserObject.expMap,
+        orderMap: parserObject.orderMap,
         selectedKeys: parserObject.selectedKeys
       });
     } catch (e) {
@@ -250,7 +263,7 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
     }
   }
   render() {
-    const {op, visual, schemaName, array, selectedKeys, expMap} = this.state;
+    const {op, visual, schemaName, array, selectedKeys, expMap, orderMap} = this.state;
     const {form: {getFieldDecorator, setFieldsValue}, schemas, groups, currentGroup, api} = this.props;
     return (
       <Form layout="vertical" {...FormItemLayout}>
@@ -350,6 +363,7 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
                 schemas={schemas}
                 op={op}
                 expMap={expMap}
+                orderMap={orderMap}
                 onChangeExpMap={this.handleChangeExpMap}
                 selectedKeys={selectedKeys}
                 onChangeSelectKeys={this.handleChangeSelectKeys}/>

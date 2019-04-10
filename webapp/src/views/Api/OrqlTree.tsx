@@ -7,6 +7,8 @@ const {TreeNode} = Tree;
 
 export type ExpMap = {[key: string]: string};
 
+export type OrderMap = {[key: string]: string};
+
 export interface OrqlTreeProps {
   schemas: Schema[];
   op: string;
@@ -14,6 +16,7 @@ export interface OrqlTreeProps {
   selectedKeys: string[];
   onChangeSelectKeys: (keys: string[]) => void;
   expMap: ExpMap;
+  orderMap: OrderMap;
   onChangeExpMap: (expMap: ExpMap) => void;
 }
 
@@ -21,7 +24,23 @@ function isArray(association: Association) {
   return association.type == 'hasMany' || association.type == 'belongsToMany';
 }
 
-const TreeNodeTitle = (props: {title: string, schema: Schema, path: string, defaultExp?: string, onChange: (exp) => void}) => (
+interface TreeNodeTitleProps {
+  title: string;
+  schema: Schema;
+  path: string;
+  defaultExp?: string;
+  defaultOrder?: string;
+  onChange: (exp) => void;
+}
+
+export function getExpAndOrder(exp?: string, order?: string) {
+  if (exp && order) return `(${exp} ${order})`;
+  if (exp) return `(${exp})`;
+  if (order) return `(${order})`;
+  return '';
+}
+
+const TreeNodeTitle = (props: TreeNodeTitleProps) => (
   <Popover
     placement="right"
     content={(
@@ -32,7 +51,8 @@ const TreeNodeTitle = (props: {title: string, schema: Schema, path: string, defa
     )}
     title="条件"
     trigger="click">
-    {props.title} <span style={{position: 'absolute'}}>{props.defaultExp ? `(${props.defaultExp})` : ''}</span>
+    {props.title}
+    <span style={{position: 'absolute'}}>{getExpAndOrder(props.defaultExp, props.defaultOrder)}</span>
   </Popover>
 )
 
@@ -43,7 +63,7 @@ class OrqlTree extends React.Component<OrqlTreeProps> {
     onChangeSelectKeys(keys.checked);
   }
   renderTree() {
-    const {schemas, schemaName, selectedKeys, expMap, onChangeExpMap} = this.props;
+    const {schemas, schemaName, selectedKeys, expMap, orderMap, onChangeExpMap} = this.props;
     if (!schemaName) return;
     const schema = schemas.find(schema => schema.name == schemaName)!;
     return (
@@ -58,6 +78,7 @@ class OrqlTree extends React.Component<OrqlTreeProps> {
             path={schemaName}
             onChange={exp => onChangeExpMap({...expMap, [schemaName]: exp})}
             defaultExp={expMap[schemaName]}
+            defaultOrder={orderMap[schemaName]}
             schema={schema}
             title={schemaName} />
         )}>
@@ -82,6 +103,7 @@ class OrqlTree extends React.Component<OrqlTreeProps> {
                   title={(
                     <TreeNodeTitle
                       defaultExp={expMap[key]}
+                      defaultOrder={orderMap[key]}
                       path={key}
                       onChange={exp => onChangeExpMap({...expMap, [key]: exp})}
                       title={association.name}
@@ -94,7 +116,7 @@ class OrqlTree extends React.Component<OrqlTreeProps> {
     );
   }
   renderRefTree(parentKey: string, array: boolean, refName: string, schemaName: string) {
-    const {schemas, selectedKeys, expMap, onChangeExpMap} = this.props;
+    const {schemas, selectedKeys, expMap, orderMap, onChangeExpMap} = this.props;
     const schema = schemas.find(schema => schema.name == schemaName)!;
     const key = `${array ? 'array' : 'object'}.${parentKey}.${refName}`;
     return (
@@ -102,6 +124,7 @@ class OrqlTree extends React.Component<OrqlTreeProps> {
         <TreeNodeTitle
           path={key}
           defaultExp={expMap[key]}
+          defaultOrder={orderMap[key]}
           onChange={exp => onChangeExpMap({...expMap, [key]: exp})}
           title={schema.name}
           schema={schema}/>
