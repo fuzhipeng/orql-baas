@@ -5,7 +5,7 @@ import {FormItemLayout, OrqlOps} from '../../config';
 import {Api, Association, Schema} from '../../beans';
 import OrqlTree, {ExpMap} from './OrqlTree';
 import Parser from 'orql-parser';
-import {OrqlExp, OrqlItem, OrqlLogicExp, OrqlLogicOp, OrqlNestExp, OrqlCompareExp, OrqlParam, OrqlValue, OrqlColumn, OrqlNull} from 'orql-parser/lib/OrqlNode';
+import {OrqlNode, OrqlExp, OrqlItem, OrqlLogicExp, OrqlLogicOp, OrqlNestExp, OrqlCompareExp, OrqlParam, OrqlValue, OrqlColumn, OrqlNull} from 'orql-parser/lib/OrqlNode';
 
 const { TextArea } = Input;
 
@@ -88,6 +88,7 @@ interface OrqlItemWrapper {
   path: string;
   item: OrqlItem;
   schema: Schema;
+  isRoot?: boolean;
 }
 
 function isArray(association: Association) {
@@ -96,18 +97,16 @@ function isArray(association: Association) {
 
 export default Form.create()(class OrqlApiForm extends React.Component<ApiFormProps, IState> {
 
-  private orqlTree = this.props.api && this.props.api.orql
-    ? Parser.parse(this.props.api.orql)
-    : undefined;
-
   private getSchema = (name: string) => {
     return this.props.schemas.find(schema => schema.name == name)!
   }
 
-  private getDefaultSelectedKeys = () => {
+  private getOrqlParseObject = (orql?: string): {selectedKeys: string[], expMap: ExpMap, tree?: OrqlNode} => {
     const selectedKeys: string[] = [];
-    if (!this.orqlTree) return selectedKeys;
-    const root = this.orqlTree.item;
+    const expMap: ExpMap = {};
+    if (!orql) return {selectedKeys, expMap};
+    const orqlTree = Parser.parse(orql);
+    const root = orqlTree.item;
     // 获取root
     selectedKeys.push(root.name);
     const stack: OrqlItemWrapper[] = [{
@@ -117,6 +116,10 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
     }];
     while (stack.length > 0) {
       const {item, schema, path} = stack.pop()!;
+      if (item.where && item.where.exp) {
+        // 获取exp
+        expMap[path] = orqlExpToString(orqlExpToString(item.where.exp));
+      }
       if (item.children) {
         for (const childItem of item.children) {
           const column = schema.columns.find(column => column.name == childItem.name);
@@ -139,48 +142,22 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
         }
       }
     }
-    return selectedKeys;
+    return {selectedKeys, expMap, tree: orqlTree};
   }
 
-  private getDefaultExpMap = () => {
-    const expMap: ExpMap = {};
-    if (!this.orqlTree) return expMap;
-    const root = this.orqlTree.item;
-    const stack: OrqlItemWrapper[] = [{
-      item: root,
-      path: root.name,
-      schema: this.getSchema(root.name)
-    }];
-    while (stack.length > 0) {
-      const {item, schema, path} = stack.pop()!;
-      if (item.where && item.where.exp) {
-        // 获取exp
-        expMap[path] = orqlExpToString(orqlExpToString(item.where.exp));
-      }
-      if (item.children) {
-        for (const childItem of item.children) {
-          const childPath = `${path}.${childItem.name}`;
-          const association = schema.associations.find(association => association.name == childItem.name);
-          if (association) {
-            stack.push({
-              item: childItem,
-              path: childPath,
-              schema: this.getSchema(association.refName)
-            });
-          }
-        }
-      }
-    }
-    return expMap;
-  }
+  private orql = this.props.api ? this.props.api.orql : undefined;
+
+  private parseObject = this.getOrqlParseObject(this.orql);
+
+  private root = this.parseObject.tree ? this.parseObject.tree.item : undefined;
 
   state: IState = {
     op: 'query',
-    visual: !!this.props.api,
-    array: this.orqlTree ? this.orqlTree.item.isArray : false,
-    selectedKeys: this.getDefaultSelectedKeys(),
-    expMap: this.getDefaultExpMap(),
-    schemaName: this.orqlTree ? this.orqlTree.item.name : undefined
+    visual: !!this.orql,
+    array: this.root ? this.root.isArray : false,
+    selectedKeys: this.parseObject.selectedKeys,
+    expMap: this.parseObject.expMap,
+    schemaName: this.root ? this.root.name : undefined
   }
 
   private handleChangeSelectKeys = (selectedKeys: string[]) => {
@@ -318,7 +295,7 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
               <Form.Item label="操作">
                 {getFieldDecorator('op', {
                   rules: [{ required: false, message: '请输入操作' }],
-                  initialValue: this.orqlTree ? this.orqlTree.op : 'query'
+                  initialValue: this.parseObject.tree ? this.parseObject.tree.op : 'query'
                 })(
                   <Select<string> onSelect={op => this.setState({op})}>
                     {OrqlOps.map(op => (
@@ -332,7 +309,7 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
               <Form.Item label="实体">
                 {getFieldDecorator('schema', {
                   rules: [{ required: false }],
-                  initialValue: this.orqlTree ? this.orqlTree.item.name : undefined
+                  initialValue: this.parseObject.tree ? this.parseObject.tree.op : undefined
                 })(
                   <Select<string> onSelect={schemaName => this.setState({schemaName})}>
                     {schemas.map(schema => (

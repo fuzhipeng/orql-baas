@@ -144,6 +144,11 @@ class ApiView extends React.Component<IProps, IState> {
     appStore.setAppMenus(this.menus);
     await schemaStore.load();
     await apiStore.load();
+    if (apiStore.groups.length > 0) {
+      this.setState({
+        currentGroupName: apiStore.groups[0]
+      });
+    }
   }
 
   handleAddOrqlApi = () => {
