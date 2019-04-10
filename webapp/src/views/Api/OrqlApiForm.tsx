@@ -118,7 +118,7 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
       const {item, schema, path} = stack.pop()!;
       if (item.where && item.where.exp) {
         // 获取exp
-        expMap[path] = orqlExpToString(orqlExpToString(item.where.exp));
+        expMap[path] = orqlExpToString(item.where.exp);
       }
       if (item.children) {
         for (const childItem of item.children) {
@@ -237,6 +237,18 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
     const orql = op + ' ' + selectItemToOrql(root);
     setFieldsValue({orql});
   }
+  private handleOrqlChange = (orql: string) => {
+    try {
+      const orqlTree = Parser.parse(orql);
+      const parserObject = this.getOrqlParseObject(orql);
+      this.setState({
+        expMap: parserObject.expMap,
+        selectedKeys: parserObject.selectedKeys
+      });
+    } catch (e) {
+      // console.log(e);
+    }
+  }
   render() {
     const {op, visual, schemaName, array, selectedKeys, expMap} = this.state;
     const {form: {getFieldDecorator, setFieldsValue}, schemas, groups, currentGroup, api} = this.props;
@@ -277,8 +289,8 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
         <Form.Item labelCol={{span: 2}} wrapperCol={{span: 20}} label="orql">
           {getFieldDecorator('orql', {
             rules: [{ required: true, message: '请输入orql' }],
-            initialValue: api ? api.orql : undefined
-          })(<TextArea />)}
+            initialValue: this.orql
+          })(<TextArea onChange={e => this.handleOrqlChange(e.target.value)} />)}
         </Form.Item>
         <Row>
           <Col span={12}>
