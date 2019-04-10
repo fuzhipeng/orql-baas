@@ -2,6 +2,7 @@ import React from 'react';
 import {RouteComponentProps} from 'react-router-dom';
 import {inject, observer} from 'mobx-react';
 import AppStore from '../../stores/AppStore';
+import {Empty} from 'antd';
 
 interface IProps extends RouteComponentProps{
   appStore: AppStore;
@@ -22,7 +23,9 @@ class PluginView extends React.Component<IProps> {
   }
   render() {
     return (
-      <div>插件</div>
+      <div style={{width: '100%', height: '100%'}}>
+        <Empty />
+      </div>
     );
   }
 }

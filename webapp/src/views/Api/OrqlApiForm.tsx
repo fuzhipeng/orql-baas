@@ -94,9 +94,11 @@ function isArray(association: Association) {
   return association.type == 'hasMany' || association.type == 'belongsToMany';
 }
 
-export default Form.create()(class ApiForm extends React.Component<ApiFormProps, IState> {
+export default Form.create()(class OrqlApiForm extends React.Component<ApiFormProps, IState> {
 
-  private orqlTree = this.props.api ? Parser.parse(this.props.api.orql) : undefined;
+  private orqlTree = this.props.api && this.props.api.orql
+    ? Parser.parse(this.props.api.orql)
+    : undefined;
 
   private getSchema = (name: string) => {
     return this.props.schemas.find(schema => schema.name == name)!

@@ -13,6 +13,7 @@ const cwd = process.cwd();
 const configPath = path.resolve(cwd, './config.json');
 const schemaPath = path.resolve(cwd, './schema.json');
 const apiPath = path.resolve(cwd, './api.json');
+const apiJsPath = path.resolve(cwd, './api.js');
 
 async function exists(path: string) {
   try {
@@ -98,6 +99,8 @@ async function start() {
     await writeJson(apiPath, apiConfig);
   }
 
+  const funMap = require(apiJsPath);
+
   apiConfig = await readJson(apiPath);
 
   router.all('/*', async (ctx, next) => {
@@ -107,34 +110,64 @@ async function start() {
     }
     const {page, size, ...other} = ctx.request.query;
     const params = {...other, ...ctx.request.body};
-    const {orql} = apiConfig.apis[index];
-    const array = /\s*(\S+)\s/.exec(orql);
-    if (!array) {
-      responseError(ctx, `orql ${orql} error`);
+    const {orql, fun, options} = apiConfig.apis[index];
+    if (orql) {
+      const array = /\s*(\S+)\s/.exec(orql);
+      if (!array) {
+        responseError(ctx, `orql ${orql} error`);
+        return;
+      }
+      const op = array[1];
+      const session = await orqlExecutor.newSession();
+      let result;
+      switch (op) {
+        case 'query':
+          const options = page && size ? {offset: (page - 1) * size, size} : {};
+          result = await session.query(orql, params, options);
+          break;
+        case 'count':
+          result = await session.query(orql, params);
+          break;
+        case 'add':
+          result = await session.add(orql, params);
+          break;
+        case 'update':
+          result = await session.update(orql, params);
+          break;
+        case 'delete':
+          result = await session.delete(orql, params);
+          break;
+      }
+      responseSuccess(ctx, result);
       return;
     }
-    const op = array[1];
-    const session = await orqlExecutor.newSession();
-    let result;
-    switch (op) {
-      case 'query':
-        const options = page && size ? {offset: (page - 1) * size, size} : {};
-        result = await session.query(orql, params, options);
-        break;
-      case 'count':
-        result = await session.query(orql, params);
-        break;
-      case 'add':
-        result = await session.add(orql, params);
-        break;
-      case 'update':
-        result = await session.update(orql, params);
-        break;
-      case 'delete':
-        result = await session.delete(orql, params);
-        break;
+    if (fun) {
+      const _fun = funMap[fun];
+      if (!_fun) {
+        responseError(ctx, `fun ${fun} not exists`);
+        return;
+      }
+      const res = {
+        json: (body: any) => {
+          ctx.response.type = 'json';
+          ctx.response.body = body;
+        },
+        string: (text: string) => {
+          ctx.response.body = text;
+        }
+      };
+      const req = {
+        params,
+        page,
+        size
+      };
+      await _fun({
+        res,
+        db: orqlExecutor,
+        req,
+        options: options ? JSON.parse(options) : {}
+      });
     }
-    responseSuccess(ctx, result);
   });
 
   router.get('/_edit/schemas', async (ctx) => {
@@ -362,6 +395,16 @@ async function start() {
     apiConfig.apis[index] = api;
     await writeJson(apiPath, apiConfig);
     responseSuccess(ctx);
+  });
+
+  // 获取fun
+  router.get('/_edit/funs', async (ctx) => {
+    const funs = Object.keys(funMap).map(name => ({
+      name,
+      label: funMap[name].label || name,
+      options: funMap[name].options
+    }));
+    responseSuccess(ctx, funs);
   });
 
   app.use(Cors());

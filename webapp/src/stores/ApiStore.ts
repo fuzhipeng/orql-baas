@@ -1,5 +1,5 @@
 import {action, observable} from 'mobx';
-import {Api} from '../beans';
+import {Api, Fun, FunOptions} from '../beans';
 import {httpDelete, httpGetWithData, httpPost, httpPut} from '../utils/network';
 
 export default class ApiStore {
@@ -8,11 +8,15 @@ export default class ApiStore {
 
   readonly apis = observable<Api>([]);
 
+  readonly funs = observable<Fun>([]);
+
   @action async load() {
     const groups = await httpGetWithData<string[]>('/_edit/apiGroups');
     const apis = await httpGetWithData<Api[]>('/_edit/apis');
+    const funs = await httpGetWithData<Fun[]>('/_edit/funs');
     this.groups.replace(groups!);
     this.apis.replace(apis!);
+    this.funs.replace(funs!);
   }
 
   @action async addApi(api: Api) {

@@ -1,3 +1,5 @@
+import {OptionType} from './components/OptionEditor';
+
 export interface Schema {
   name: string;
   table?: string;
@@ -29,10 +31,30 @@ export interface Api {
   url: string;
   comment?: string;
   group: string;
-  orql: string;
+  orql?: string;
+  fun?: string;
+  options?: string;
 }
 
 export interface AppMenu {
   label: string;
-  onClick: () => void;
+  onClick?: () => void;
+  subMenus?: AppMenu[];
+}
+
+export interface Fun {
+  name: string;
+  label: string;
+  options?: FunOptions;
+}
+
+export type FunOptions = {[key: string]: FunOption}
+
+export interface FunOption {
+  label: string;
+  type: OptionType;
+  values?: string[];
+  defaultValue?: string;
+  dep?: string;
+  required?: boolean;
 }

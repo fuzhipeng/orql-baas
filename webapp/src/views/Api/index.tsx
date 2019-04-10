@@ -2,7 +2,7 @@ import React from 'react';
 import {RouteComponentProps} from 'react-router-dom';
 import {inject, observer} from 'mobx-react';
 import AppStore from '../../stores/AppStore';
-import ApiForm from './ApiForm';
+import OrqlApiForm from './OrqlApiForm';
 import SchemaStore from '../../stores/SchemaStore';
 import {Button, Empty, message, Modal, Table} from 'antd';
 import ApiStore from '../../stores/ApiStore';
@@ -10,6 +10,7 @@ import GroupForm from './GroupForm';
 import {Api} from '../../beans';
 import UrlTestForm from './UrlTestForm';
 import {submitUrl} from '../../utils/network';
+import FunApiForm from './FunApiForm';
 
 interface IProps extends RouteComponentProps {
   appStore: AppStore;
@@ -48,8 +49,16 @@ const ApiTitle = (props: { selected: boolean, api: Api, onClick: () => void }) =
   )
 }
 
+type ShowDialog = 'createOrqlApi' |
+  'createFunApi' |
+  'createGroup' |
+  'updateGroup' |
+  'updateOrqlApi' |
+  'updateFunApi' |
+  'none';
+
 interface IState {
-  showDialog: 'createApi' | 'createGroup' | 'updateGroup' | 'updateApi' | 'none';
+  showDialog: ShowDialog;
   currentGroupName?: string;
   currentApiUrl?: string;
   submitResult?: any;
@@ -85,16 +94,26 @@ class ApiView extends React.Component<IProps, IState> {
     }
   }, {
     label: '新建api',
-    onClick: () => this.setState({
-      showDialog: 'createApi'
-    })
+    subMenus: [{
+      label: 'orql',
+      onClick: () => this.setState({
+        showDialog: 'createOrqlApi'
+      })
+    }, {
+      label: 'fun',
+      onClick: () => this.setState({
+        showDialog: 'createFunApi'
+      })
+    }]
   }, {
     label: '编辑api',
     onClick: () => {
-      const {currentGroupName} = this.state;
-      if (!currentGroupName) return;
+      const {apiStore: {apis}} = this.props;
+      const {currentGroupName, currentApiUrl} = this.state;
+      if (!currentGroupName || !currentApiUrl) return;
+      const api = apis.find(api => api.url == currentApiUrl)!;
       this.setState({
-        showDialog: 'updateApi'
+        showDialog: api.orql ? 'updateOrqlApi' : 'updateFunApi'
       });
     }
   }, {
@@ -109,10 +128,12 @@ class ApiView extends React.Component<IProps, IState> {
       });
     }
   }];
-  private createApiForm?: any;
+  private createOrqlApiForm?: any;
   private createGroupForm?: any;
   private updateGroupForm?: any;
-  private updateApiForm?: any;
+  private updateOrqlApiForm?: any;
+  private createFunApiForm?: any;
+  private updateFunApiForm?: any;
   private urlTestForm?: any;
   state: IState = {
     showDialog: 'none'
@@ -125,8 +146,8 @@ class ApiView extends React.Component<IProps, IState> {
     await apiStore.load();
   }
 
-  handleAddApi = () => {
-    const {form} = this.createApiForm.props;
+  handleAddOrqlApi = () => {
+    const {form} = this.createOrqlApiForm.props;
     form.validateFields(async (err, values) => {
       if (err) return;
       const {apiStore} = this.props;
@@ -138,8 +159,8 @@ class ApiView extends React.Component<IProps, IState> {
     });
   }
 
-  handleUpdateApi = () => {
-    const {form} = this.updateApiForm.props;
+  handleUpdateOrqlApi = () => {
+    const {form} = this.updateOrqlApiForm.props;
     form.validateFields(async (err, values) => {
       if (err) return;
       const {apiStore} = this.props;
@@ -149,6 +170,41 @@ class ApiView extends React.Component<IProps, IState> {
       this.setState({
         showDialog: 'none',
         currentApiUrl: url
+      });
+    });
+  }
+
+  handleAddFunApi = () => {
+    const {form} = this.createFunApiForm.props;
+    form.validateFields(async (err, values) => {
+      if (err) return;
+      const {apiStore} = this.props;
+      const {url, comment, fun, group, ...options} = values;
+      for (const key in options) {
+        options[key.substr(1)] = options[key];
+        delete options[key];
+      }
+      await apiStore.addApi({url, comment, fun, group, options: JSON.stringify(options)});
+      this.setState({
+        showDialog: 'none'
+      });
+    });
+  }
+
+  handleUpdateFunApi = () => {
+    const {form} = this.updateFunApiForm.props;
+    form.validateFields(async (err, values) => {
+      if (err) return;
+      const {apiStore} = this.props;
+      const {currentApiUrl} = this.state;
+      const {url, comment, fun, group, ...options} = values;
+      for (const key in options) {
+        options[key.substr(1)] = options[key];
+        delete options[key];
+      }
+      await apiStore.updateApi(currentApiUrl!, {url, comment, fun, group, options: JSON.stringify(options)});
+      this.setState({
+        showDialog: 'none'
       });
     });
   }
@@ -217,30 +273,30 @@ class ApiView extends React.Component<IProps, IState> {
     });
   }
 
-  renderCreateApiForm() {
+  renderCreateOrqlApiForm() {
     const {apiStore: {groups}} = this.props;
     const {currentGroupName} = this.state;
     if (!currentGroupName) return;
     return (
       <Modal
         title="添加api"
-        visible={this.state.showDialog == 'createApi'}
+        visible={this.state.showDialog == 'createOrqlApi'}
         okText="确定"
         cancelText="取消"
         width={800}
         style={{top: 20}}
-        onOk={this.handleAddApi}
+        onOk={this.handleAddOrqlApi}
         onCancel={() => this.setState({showDialog: 'none'})}>
-        <ApiForm
+        <OrqlApiForm
           groups={groups}
           currentGroup={currentGroupName}
           schemas={this.props.schemaStore.schemas}
-          wrappedComponentRef={ref => this.createApiForm = ref}/>
+          wrappedComponentRef={ref => this.createOrqlApiForm = ref}/>
       </Modal>
     );
   }
 
-  renderUpdateApiForm() {
+  renderUpdateOrqlApiForm() {
     const {apiStore: {groups, apis}} = this.props;
     const {currentGroupName, currentApiUrl} = this.state;
     if (!currentGroupName || !currentApiUrl) return;
@@ -248,19 +304,67 @@ class ApiView extends React.Component<IProps, IState> {
     return (
       <Modal
         title="编辑api"
-        visible={this.state.showDialog == 'updateApi'}
+        visible={this.state.showDialog == 'updateOrqlApi'}
         okText="确定"
         cancelText="取消"
         width={800}
         style={{top: 20}}
-        onOk={this.handleUpdateApi}
+        onOk={this.handleUpdateOrqlApi}
         onCancel={() => this.setState({showDialog: 'none'})}>
-        <ApiForm
+        <OrqlApiForm
           api={api}
           groups={groups}
           currentGroup={currentGroupName}
           schemas={this.props.schemaStore.schemas}
-          wrappedComponentRef={ref => this.updateApiForm = ref}/>
+          wrappedComponentRef={ref => this.updateOrqlApiForm = ref}/>
+      </Modal>
+    );
+  }
+
+  renderCreateFunApiForm() {
+    const {apiStore: {groups, funs}} = this.props;
+    const {currentGroupName} = this.state;
+    if (!currentGroupName) return;
+    return (
+      <Modal
+        title="添加fun api"
+        visible={this.state.showDialog == 'createFunApi'}
+        okText="确定"
+        cancelText="取消"
+        width={800}
+        style={{top: 20}}
+        onOk={this.handleAddFunApi}
+        onCancel={() => this.setState({showDialog: 'none'})}>
+        <FunApiForm
+          groups={groups}
+          currentGroup={currentGroupName}
+          funs={funs}
+          wrappedComponentRef={ref => this.createFunApiForm = ref}/>
+      </Modal>
+    );
+  }
+
+  renderUpdateFunApiForm() {
+    const {apiStore: {groups, funs, apis}} = this.props;
+    const {currentGroupName, currentApiUrl} = this.state;
+    if (!currentGroupName || !currentApiUrl) return;
+    const api = apis.find(api => api.url == currentApiUrl)!;
+    return (
+      <Modal
+        title="编辑fun api"
+        visible={this.state.showDialog == 'updateFunApi'}
+        okText="确定"
+        cancelText="取消"
+        width={800}
+        style={{top: 20}}
+        onOk={this.handleUpdateFunApi}
+        onCancel={() => this.setState({showDialog: 'none'})}>
+        <FunApiForm
+          groups={groups}
+          currentGroup={currentGroupName}
+          api={api}
+          funs={funs}
+          wrappedComponentRef={ref => this.updateFunApiForm = ref}/>
       </Modal>
     );
   }
@@ -304,7 +408,8 @@ class ApiView extends React.Component<IProps, IState> {
     return (
       <div style={{padding: 10}}>
         <p>url: {api.url}</p>
-        <p>orql: {api.orql}</p>
+        {api.orql && <p>orql: {api.orql}</p>}
+        {api.options && <p>options: {api.options}</p>}
         <p>备注: {api.comment}</p>
         <div style={{marginTop: 20}}>
           <UrlTestForm wrappedComponentRef={ref => this.urlTestForm = ref} api={api}/>
@@ -344,8 +449,10 @@ class ApiView extends React.Component<IProps, IState> {
     const groupApi = apis.filter(api => api.group == currentGroupName);
     return (
       <div style={{display: 'flex'}}>
-        {this.renderCreateApiForm()}
-        {this.renderUpdateApiForm()}
+        {this.renderCreateOrqlApiForm()}
+        {this.renderUpdateOrqlApiForm()}
+        {this.renderCreateFunApiForm()}
+        {this.renderUpdateFunApiForm()}
         {this.renderCreateGroupForm()}
         {this.renderUpdateGroupForm()}
         <div style={{
