@@ -4,7 +4,13 @@ import {httpDelete, httpGetWithData, httpPost, httpPut} from '../utils/network';
 import {message} from 'antd';
 
 export default class SchemaStore {
+
   readonly schemas = observable<Schema>([]);
+
+  private sync() {
+    httpPut('/_edit/sync')
+      .then(res => console.log('sync', res));
+  }
 
   @action async load() {
     const schemas = await httpGetWithData<Schema[]>('/_edit/schemas');

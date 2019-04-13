@@ -40,6 +40,7 @@ interface SelectItem {
   children: SelectItem[];
 }
 
+// orql表达式转string
 function orqlExpToString(orqlExp: OrqlExp): string {
   if (orqlExp instanceof OrqlNestExp) {
     return '(' + orqlExpToString(orqlExp) + ')';
@@ -69,10 +70,12 @@ function orqlExpToString(orqlExp: OrqlExp): string {
   throw new Error('');
 }
 
+// orql orders转string
 function orqlOrdersToString(orders: OrqlOrder[]): string {
   return 'order ' + orders.map(order => `${order.columns.map(column => column.name).join(' ')} ${order.sort}`).join(', ');
 }
 
+// select item转orql
 function selectItemToOrql(selectItem: SelectItem): string {
   let orql = selectItem.name;
   // if (selectItem.exp) orql += '(' + selectItem.exp + ')';
@@ -182,12 +185,18 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
       expMap
     }, this.genOrql);
   }
-  private getParent = (root: SelectItem, arr: string[]): SelectItem => {
+  private getParent = (root: SelectItem, arr: string[]): SelectItem | undefined => {
     let tmp = root;
     let i = 2;
+    // console.log('arr', arr);
     while (i < arr.length - 1) {
-      let key = arr[i++];
-      tmp = root.children.find(child => child.name == key)!;
+      let key = arr[i];
+      // console.log('i', i, 'key', key);
+      i ++;
+      // console.log('parent', JSON.stringify(tmp));
+      if (!tmp) return undefined;
+      tmp = tmp.children.find(child => child.name == key)!;
+      // console.log('tmp', JSON.stringify(tmp));
     }
     return tmp;
   }
@@ -195,6 +204,7 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
     const {form: {setFieldsValue}} = this.props;
     const {op, selectedKeys, expMap, orderMap, schemaName, array} = this.state;
     if (selectedKeys.length == 0) return;
+    // console.log(selectedKeys);
     const keyTmps: KeyTmp[] = [];
     // 先切割缓存起来
     selectedKeys.forEach(key => {
@@ -220,7 +230,12 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
       const keyTmp = keyTmps[i];
       // 获取父节点
       const parent = this.getParent(root, keyTmp.arr);
-      if (!parent) continue;
+      if (!parent) {
+        // console.log('root', JSON.stringify(root));
+        // console.log('keyTmps', JSON.stringify(keyTmps));
+        console.warn(`key: ${keyTmp.key} parent not exists`);
+        continue;
+      }
       // 类型 array object column
       const type = keyTmp.arr[0];
       // 名称
@@ -261,6 +276,11 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
     } catch (e) {
       // console.log(e);
     }
+  }
+  private handleArrayChange = (array: boolean) => {
+    this.setState({
+      array
+    }, this.genOrql);
   }
   render() {
     const {op, visual, schemaName, array, selectedKeys, expMap, orderMap} = this.state;
@@ -310,7 +330,7 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
             <Form.Item label="配置">
               {getFieldDecorator('visual', {
                 initialValue: !!api,
-              })(<Switch onChange={visual => this.setState({visual})} />)}
+              })(<Switch defaultChecked={!!api} onChange={visual => this.setState({visual})} />)}
             </Form.Item>
           </Col>
         </Row>
@@ -334,7 +354,7 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
               <Form.Item label="实体">
                 {getFieldDecorator('schema', {
                   rules: [{ required: false }],
-                  initialValue: this.parseObject.tree ? this.parseObject.tree.op : undefined
+                  initialValue: this.parseObject.tree ? this.parseObject.tree.item.name : undefined
                 })(
                   <Select<string> onSelect={schemaName => this.setState({schemaName})}>
                     {schemas.map(schema => (
@@ -347,8 +367,8 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
             <Col span={6}>
               <Form.Item label="数组">
                 {getFieldDecorator('array', {
-                  initialValue: this.state.array,
-                })(<Switch onChange={array => this.setState({array})} />)}
+                  initialValue: array,
+                })(<Switch defaultChecked={array} onChange={this.handleArrayChange} />)}
               </Form.Item>
             </Col>
             <Col span={6}>

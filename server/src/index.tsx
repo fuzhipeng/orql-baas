@@ -8,6 +8,7 @@ import Cors from '@koa/cors';
 import OrqlExecutor from 'orql-executor';
 import {ApiConfig, Config, Schema} from './beans';
 import {Columns} from 'orql-executor/lib/SchemaManager';
+import {readJson, responseError, responseSuccess, writeJson} from './utils';
 
 const cwd = process.cwd();
 const configPath = path.resolve(cwd, './config.json');
@@ -22,28 +23,6 @@ async function exists(path: string) {
   } catch (e) {
     return false;
   }
-}
-
-async function readJson(path: string) {
-  const json = await fs.promises.readFile(path, {encoding: 'utf-8'});
-  return JSON.parse(json as string);
-}
-
-async function writeJson(path: string, obj: any) {
-  await fs.promises.writeFile(path, JSON.stringify(obj, null, 2), {encoding: 'utf-8'});
-}
-
-function responseJson(ctx: Context, body: any) {
-  ctx.response.type = 'json';
-  ctx.response.body = body;
-}
-
-function responseSuccess(ctx: Context, data?: any) {
-  responseJson(ctx, {success: true, data});
-}
-
-function responseError(ctx: Context, msg?: string) {
-  responseJson(ctx, {success: false, msg});
 }
 
 async function start() {
@@ -84,7 +63,7 @@ async function start() {
     orqlExecutor.addSchema(schema.name, columns);
   });
   try {
-    await orqlExecutor.sync('create');
+    await orqlExecutor.sync('update');
   } catch (e) {
     console.error(e);
   }
@@ -170,11 +149,19 @@ async function start() {
     }
   });
 
+  // 同步表结构
+  router.put('/_edit/sync', async (ctx) => {
+    await orqlExecutor.sync('update');
+    responseSuccess(ctx);
+  });
+
+  // 获取schema
   router.get('/_edit/schemas', async (ctx) => {
     schemas = await readJson(schemaPath);
     responseSuccess(ctx, schemas);
   });
 
+  // 添加schema
   router.post('/_edit/schemas', async (ctx) => {
     const {name, table} = ctx.request.body;
     if (schemas.find(schema => schema.name == name)) {
@@ -187,6 +174,7 @@ async function start() {
     responseSuccess(ctx);
   });
 
+  // 删除schema
   router.delete('/_edit/schemas/:name', async (ctx) => {
     const {name} = ctx.params;
     const index = schemas.findIndex(schema => schema.name == name);
@@ -199,6 +187,7 @@ async function start() {
     responseSuccess(ctx);
   });
 
+  // 修改schema
   router.put('/_edit/schemas/:name', async (ctx) => {
     const schema = schemas.find(schema => schema.name == ctx.params.name);
     if (!schema) {
@@ -212,6 +201,7 @@ async function start() {
     responseSuccess(ctx);
   });
 
+  // 添加列
   router.post('/_edit/schemas/:name/columns', async (ctx) => {
     const column = ctx.request.body;
     const schema = schemas.find(schema => schema.name == ctx.params.name);
@@ -228,6 +218,7 @@ async function start() {
     responseSuccess(ctx);
   });
 
+  // 修改列
   router.put('/_edit/schemas/:schemaName/columns/:columnName', async (ctx) => {
     const column = ctx.request.body;
     const {schemaName, columnName} = ctx.params;
@@ -242,6 +233,7 @@ async function start() {
     responseSuccess(ctx);
   });
 
+  // 删除列
   router.delete('/_edit/schemas/:schemaName/columns/:columnName', async (ctx) => {
     const {schemaName, columnName} = ctx.params;
     const schema = schemas.find(schema => schema.name == schemaName);
@@ -255,11 +247,13 @@ async function start() {
     responseSuccess(ctx);
   });
 
+  // 添加关联
   router.post('/_edit/schemas/:name/associations', async (ctx) => {
+    const schemaName = ctx.params.name;
     const association = ctx.request.body;
-    const schema = schemas.find(schema => schema.name = ctx.params.name);
+    const schema = schemas.find(schema => schema.name == schemaName);
     if (!schema) {
-      responseError(ctx, `schema ${ctx.params.name} not exists`);
+      responseError(ctx, `schema ${schemaName} not exists`);
       return;
     }
     schema.associations.push(association);
@@ -267,9 +261,10 @@ async function start() {
     responseSuccess(ctx);
   });
 
+  // 删除关联
   router.delete('/_edit/schemas/:schemaName/associations/:associationName', async (ctx) => {
     const {schemaName, associationName} = ctx.params;
-    const schema = schemas.find(schema => schema.name = schemaName);
+    const schema = schemas.find(schema => schema.name == schemaName);
     if (!schema) {
       responseError(ctx, `schema ${schemaName} not exists`);
       return;
@@ -284,10 +279,11 @@ async function start() {
     responseSuccess(ctx);
   });
 
+  // 修改关联
   router.put('/_edit/schemas/:schemaName/associations/:associationName', async (ctx) => {
     const {schemaName, associationName} = ctx.params;
     const association = ctx.request.body;
-    const schema = schemas.find(schema => schema.name = schemaName);
+    const schema = schemas.find(schema => schema.name == schemaName);
     if (!schema) {
       responseError(ctx, `schema ${schemaName} not exists`);
       return;

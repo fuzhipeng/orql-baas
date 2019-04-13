@@ -24,12 +24,12 @@ export async function httpGetWithData<T>(url: string, params?: any): Promise<T |
   return data.data;
 }
 
-export async function httpPost(url: string, data: any): Promise<JsonResponse<any>> {
+export async function httpPost(url: string, data?: any): Promise<JsonResponse<any>> {
   const res = await instance.post(url, data);
   return res.data;
 }
 
-export async function httpPut(url: string, data: any): Promise<JsonResponse<any>> {
+export async function httpPut(url: string, data?: any): Promise<JsonResponse<any>> {
   const res = await instance.put(url, data);
   return res.data;
 }

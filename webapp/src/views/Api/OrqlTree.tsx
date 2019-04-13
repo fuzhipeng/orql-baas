@@ -126,28 +126,31 @@ class OrqlTree extends React.Component<OrqlTreeProps> {
           defaultExp={expMap[key]}
           defaultOrder={orderMap[key]}
           onChange={exp => onChangeExpMap({...expMap, [key]: exp})}
-          title={schema.name}
+          title={refName}
           schema={schema}/>
       )}>
         {schema.columns.map(column => (
           <TreeNode
-            key={`column.${parentKey}.${schema.name}.${column.name}`}
+            key={`column.${parentKey}.${refName}.${column.name}`}
             title={column.name}/>
         ))}
-        {schema.associations.map(association => (
-          selectedKeys.indexOf(key) >= 0
-            ? this.renderRefTree(
-              `${parentKey}.${schema.name}`,
-            isArray(association),
-            association.name,
-            association.refName)
-            : (
-              <TreeNode
-                key={key}
-                title={association.name}>
-              </TreeNode>
-            )
-        ))}
+        {schema.associations.map(association => {
+          const childKey = `${isArray(association) ? 'array' : 'object'}.${parentKey}.${refName}.${association.name}`;
+
+          if (selectedKeys.indexOf(childKey) >= 0) {
+            return this.renderRefTree(
+              `${parentKey}.${refName}`,
+              isArray(association),
+              association.name,
+              association.refName)
+          }
+          return (
+            <TreeNode
+              key={childKey}
+              title={association.name}>
+            </TreeNode>
+          )
+        })}
       </TreeNode>
     );
   }
