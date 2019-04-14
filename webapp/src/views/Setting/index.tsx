@@ -15,7 +15,19 @@ class SettingView extends React.Component<IProps> {
   }
   render() {
     return (
-      <div>设置</div>
+      <div style={{display: 'flex'}}>
+
+        <div style={{
+          width: 200,
+          marginTop: 5,
+          height: '100%',
+          backgroundColor: '#fefefe',
+          borderRight: '1px solid #ebedf0'
+        }}>
+        </div>
+        <div style={{flex: 1}}>
+        </div>
+      </div>
     );
   }
 }

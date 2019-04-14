@@ -27,9 +27,9 @@ router.all('/*', async (ctx, next) => {
       responseError(ctx, `plugin ${config.name} not exists`);
       return;
     }
-    if (plugin.beforeHandle) {
+    if (plugin.before) {
       // 执行前置拦截器
-      const pResult = plugin.beforeHandle({});
+      const pResult = plugin.before({});
       if (pResult == false) return;
     }
   }
@@ -62,9 +62,9 @@ router.all('/*', async (ctx, next) => {
     }
     for (const config of pluginConfigs) {
       const plugin = funPlugins[config.name];
-      if (plugin && plugin.afterHandle) {
+      if (plugin && plugin.after) {
         // 执行后置拦截器
-        const pResult = plugin.afterHandle({});
+        const pResult = plugin.after({});
         if (pResult == false) return;
       }
     }
@@ -85,9 +85,9 @@ router.all('/*', async (ctx, next) => {
             responseError(ctx, `plugin ${config.name} not exists`);
             return;
           }
-          if (plugin && plugin.afterHandle) {
+          if (plugin && plugin.after) {
             // 执行后置拦截器
-            const pResult = plugin.afterHandle({});
+            const pResult = plugin.after({});
             if (pResult == false) return false;
           }
         }

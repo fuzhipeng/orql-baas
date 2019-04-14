@@ -24,6 +24,7 @@ export interface ApiConfig {
 
 export interface PluginConfig {
   name: string;
+  weight?: number;
   comment?: string;
   options?: string;
   matchType: MatchType;
@@ -58,7 +59,6 @@ export interface Association {
 }
 
 export interface FunApi {
-  name: string;
   label: string;
   options?: FunOptions;
   handle: (any) => void;
@@ -68,8 +68,8 @@ export interface FunPlugin {
   name: string;
   label: string;
   options?: FunOptions;
-  beforeHandle?: (any) => boolean | undefined;
-  afterHandle?: (any) => boolean | undefined;
+  before?: (any) => boolean | undefined;
+  after?: (any) => boolean | undefined;
 }
 
 export enum OptionType {

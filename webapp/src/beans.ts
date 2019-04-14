@@ -34,6 +34,20 @@ export interface Api {
   options?: string;
 }
 
+export interface PluginConfig {
+  name: string;
+  weight?: number;
+  comment?: string;
+  options?: string;
+  matchType: MatchType;
+  matchValue: string;
+}
+
+export enum MatchType {
+  Group = 'group',
+  Url = 'url'
+}
+
 export interface AppMenu {
   label: string;
   onClick?: () => void;
@@ -41,6 +55,12 @@ export interface AppMenu {
 }
 
 export interface Fun {
+  name: string;
+  label: string;
+  options?: FunOptions;
+}
+
+export interface Plugin {
   name: string;
   label: string;
   options?: FunOptions;

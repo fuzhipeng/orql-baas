@@ -1,7 +1,7 @@
 import {router} from '../server';
 import orqlExecutor from '../orqlExecutor';
 import {responseError, responseSuccess, writeJson} from '../utils';
-import {apiObject, apiPath, funApis, schemaPath, schemas} from '../config';
+import {apiObject, apiPath, funApis, funPlugins, schemaPath, schemas} from '../config';
 
 // 同步表结构
 router.put('/_edit/sync', async (ctx) => {
@@ -248,25 +248,50 @@ router.put('/_edit/apis/:url', async (ctx) => {
 
 // 获取fun
 router.get('/_edit/funs', async (ctx) => {
-  responseSuccess(ctx, funApis);
+  const array = Object.keys(funApis).map(name => ({...funApis[name], name}));
+  responseSuccess(ctx, array);
 });
 
 // 添加插件
-router.post('/_edit/plugins', async (ctx) => {
-
+router.post('/_edit/pluginConfigs', async (ctx) => {
+  const plugin = ctx.request.body;
+  apiObject.plugins.push(plugin);
+  await writeJson(apiPath, apiObject);
+  responseSuccess(ctx);
 });
 
 // 修改插件
-router.put('/_edit/plugins', async (ctx) => {
-
+router.put('/_edit/pluginConfigs/:index', async (ctx) => {
+  const {index} = ctx.params;
+  const plugin = ctx.request.body;
+  if (index > apiObject.plugins.length) {
+    responseError(ctx, `plugin index ${index} not exists`);
+    return;
+  }
+  apiObject.plugins[index] = plugin;
+  await writeJson(apiPath, apiObject);
+  responseSuccess(ctx);
 });
 
 // 删除插件
-router.delete('/_edit/plugins', async (ctx) => {
-
+router.delete('/_edit/pluginConfigs/:index', async (ctx) => {
+  const {index} = ctx.params;
+  if (index > apiObject.plugins.length) {
+    responseError(ctx, `plugin index ${index} not exists`);
+    return;
+  }
+  apiObject.plugins.splice(index, 1);
+  await writeJson(apiPath, apiObject);
+  responseSuccess(ctx);
 });
 
 // 获取插件
 router.get('/_edit/plugins', async (ctx) => {
+  const array = Object.keys(funPlugins).map(name => ({...funPlugins[name], name}));
+  responseSuccess(ctx, array);
+});
 
+// 获取插件配置
+router.get('/_edit/pluginConfigs', async (ctx) => {
+  responseSuccess(ctx, apiObject.plugins);
 });

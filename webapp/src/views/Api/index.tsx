@@ -12,12 +12,6 @@ import UrlTestForm from './UrlTestForm';
 import {submitUrl} from '../../utils/network';
 import FunApiForm from './FunApiForm';
 
-interface IProps extends RouteComponentProps {
-  appStore: AppStore;
-  schemaStore: SchemaStore;
-  apiStore: ApiStore;
-}
-
 const GroupTitle = (props: { selected: boolean, name: string, onClick: () => void }) => {
   return (
     <div
@@ -47,6 +41,12 @@ const ApiTitle = (props: { selected: boolean, api: Api, onClick: () => void }) =
       <div style={{fontSize: 10}}>{props.api.comment}</div>
     </div>
   )
+}
+
+interface IProps extends RouteComponentProps {
+  appStore: AppStore;
+  schemaStore: SchemaStore;
+  apiStore: ApiStore;
 }
 
 type ShowDialog = 'createOrqlApi' |
