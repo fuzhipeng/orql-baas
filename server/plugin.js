@@ -1,5 +1,5 @@
-export const token = {
-  before: () => {
+exports.log = {
+  before: ({ctx}) => {
 
   },
   after: () => {

@@ -2,15 +2,32 @@ import {responseError, responseSuccess} from '../utils';
 import {router} from '../server';
 import {apiConfig, funApis} from '../config';
 import orqlExecutor from '../orqlExecutor';
+import {Api, MatchType} from '../beans';
+import minimatch from 'minimatch';
+
+function getPlugins(api: Api) {
+  return apiConfig.plugins.filter(({matchType, matchValue}) =>
+    (matchType == MatchType.Group && matchValue == api.group) ||
+    (matchType == MatchType.Url && minimatch(matchValue, api.url)));
+}
 
 router.all('/*', async (ctx, next) => {
-  const index = apiConfig.apis.findIndex(api => api.url == ctx.request.path);
-  if (index < 0) {
+  const api = apiConfig.apis.find(api => api.url == ctx.request.path);
+  if (!api) {
     return next();
   }
+  const plugins = getPlugins(api);
+
   const {page, size, ...other} = ctx.request.query;
   const params = {...other, ...ctx.request.body};
-  const {orql, fun, options} = apiConfig.apis[index];
+  const {orql, fun, options} = api;
+  for (const plugin of plugins) {
+    if (plugin.beforeHandle) {
+      // 执行前置拦截器
+      const pResult = plugin.beforeHandle({});
+      if (pResult == false) return;
+    }
+  }
   if (orql) {
     const array = /\s*(\S+)\s/.exec(orql);
     if (!array) {
@@ -38,6 +55,13 @@ router.all('/*', async (ctx, next) => {
         result = await session.delete(orql, params);
         break;
     }
+    for (const plugin of plugins) {
+      if (plugin && plugin.afterHandle) {
+        // 执行后置拦截器
+        const pResult = plugin.afterHandle({});
+        if (pResult == false) return;
+      }
+    }
     responseSuccess(ctx, result);
     return;
   }
@@ -48,14 +72,27 @@ router.all('/*', async (ctx, next) => {
       return;
     }
     const res = {
+      _executePlugin: () => {
+        for (const plugin of plugins) {
+          if (plugin && plugin.afterHandle) {
+            // 执行后置拦截器
+            const pResult = plugin.afterHandle({});
+            if (pResult == false) return false;
+          }
+        }
+      },
       json: (body: any) => {
+        const result = res._executePlugin();
+        if (result) return;
         ctx.response.type = 'json';
         ctx.response.body = body;
       },
       string: (text: string) => {
+        const result = res._executePlugin();
+        if (result) return;
         ctx.response.body = text;
       }
-    };
+    }
     const req = {
       params,
       page,

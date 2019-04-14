@@ -10,6 +10,7 @@ export interface Config {
 export interface ApiConfig {
   groups: string[];
   apis: Api[];
+  plugins: ApiPlugin[]
 }
 
 export interface Api {
@@ -55,10 +56,25 @@ export interface FunApi {
   handle: (any) => void;
 }
 
+export interface ApiPlugin {
+  name: string;
+  label: string;
+  options?: FunOptions;
+  beforeHandle?: (any) => boolean | undefined;
+  afterHandle?: (any) => boolean | undefined;
+  matchType: MatchType;
+  matchValue: string;
+}
+
 export enum OptionType {
   Radio = 'radio',
   Text = 'text',
   Select = 'select'
+}
+
+export enum MatchType {
+  Group = 'group',
+  Url = 'url'
 }
 
 export type FunOptions = {[key: string]: FunOption}
