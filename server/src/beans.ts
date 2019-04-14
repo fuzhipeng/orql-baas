@@ -7,19 +7,27 @@ export interface Config {
   orql: ConfigurationOptions;
 }
 
-export interface ApiConfig {
+export interface ApiObject {
   groups: string[];
-  apis: Api[];
-  plugins: ApiPlugin[]
+  apis: ApiConfig[];
+  plugins: PluginConfig[]
 }
 
-export interface Api {
+export interface ApiConfig {
   url: string;
   orql?: string;
   fun?: string;
   options?: string;
   group: string;
   comment?: string;
+}
+
+export interface PluginConfig {
+  name: string;
+  comment?: string;
+  options?: string;
+  matchType: MatchType;
+  matchValue: string;
 }
 
 export interface Schema {
@@ -56,14 +64,12 @@ export interface FunApi {
   handle: (any) => void;
 }
 
-export interface ApiPlugin {
+export interface FunPlugin {
   name: string;
   label: string;
   options?: FunOptions;
   beforeHandle?: (any) => boolean | undefined;
   afterHandle?: (any) => boolean | undefined;
-  matchType: MatchType;
-  matchValue: string;
 }
 
 export enum OptionType {

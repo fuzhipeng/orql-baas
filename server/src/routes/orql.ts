@@ -1,27 +1,32 @@
 import {responseError, responseSuccess} from '../utils';
 import {router} from '../server';
-import {apiConfig, funApis} from '../config';
+import {apiObject, funApis, funPlugins} from '../config';
 import orqlExecutor from '../orqlExecutor';
-import {Api, MatchType} from '../beans';
+import {ApiConfig, MatchType} from '../beans';
 import minimatch from 'minimatch';
 
-function getPlugins(api: Api) {
-  return apiConfig.plugins.filter(({matchType, matchValue}) =>
+function getPlugins(api: ApiConfig) {
+  return apiObject.plugins.filter(({matchType, matchValue}) =>
     (matchType == MatchType.Group && matchValue == api.group) ||
     (matchType == MatchType.Url && minimatch(matchValue, api.url)));
 }
 
 router.all('/*', async (ctx, next) => {
-  const api = apiConfig.apis.find(api => api.url == ctx.request.path);
+  const api = apiObject.apis.find(api => api.url == ctx.request.path);
   if (!api) {
     return next();
   }
-  const plugins = getPlugins(api);
+  const pluginConfigs = getPlugins(api);
 
   const {page, size, ...other} = ctx.request.query;
   const params = {...other, ...ctx.request.body};
   const {orql, fun, options} = api;
-  for (const plugin of plugins) {
+  for (const config of pluginConfigs) {
+    const plugin = funPlugins[config.name];
+    if (!plugin) {
+      responseError(ctx, `plugin ${config.name} not exists`);
+      return;
+    }
     if (plugin.beforeHandle) {
       // 执行前置拦截器
       const pResult = plugin.beforeHandle({});
@@ -55,7 +60,8 @@ router.all('/*', async (ctx, next) => {
         result = await session.delete(orql, params);
         break;
     }
-    for (const plugin of plugins) {
+    for (const config of pluginConfigs) {
+      const plugin = funPlugins[config.name];
       if (plugin && plugin.afterHandle) {
         // 执行后置拦截器
         const pResult = plugin.afterHandle({});
@@ -73,7 +79,12 @@ router.all('/*', async (ctx, next) => {
     }
     const res = {
       _executePlugin: () => {
-        for (const plugin of plugins) {
+        for (const config of pluginConfigs) {
+          const plugin = funPlugins[config.name];
+          if (!plugin) {
+            responseError(ctx, `plugin ${config.name} not exists`);
+            return;
+          }
           if (plugin && plugin.afterHandle) {
             // 执行后置拦截器
             const pResult = plugin.afterHandle({});
