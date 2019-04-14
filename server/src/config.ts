@@ -1,14 +1,15 @@
 import path from "path";
 import process from "process";
 import * as fs from 'fs';
-import {ApiConfig, Config, Schema} from './beans';
-import {exists, readJson, readJsonSync, writeJson, writeJsonSync} from './utils';
+import {Config, FunApi, Schema} from './beans';
+import {readJsonSync, writeJsonSync} from './utils';
 
 const cwd = process.cwd();
 export const configPath = path.resolve(cwd, './config.json');
 export const schemaPath = path.resolve(cwd, './schema.json');
 export const apiPath = path.resolve(cwd, './api.json');
 export const apiJsPath = path.resolve(cwd, './api.js');
+export const pluginJsPath = path.resolve(cwd, './plugin.js');
 
 if (!fs.existsSync(configPath)) {
   const exampleConfig: Config = {
@@ -40,8 +41,8 @@ if (!fs.existsSync(apiPath)) {
   writeJsonSync(apiPath, {apis: [], groups: []});
 }
 
-const funMap = require(apiJsPath);
+const funApis: {[name: string]: FunApi} = require(apiJsPath);
 
 const apiConfig = readJsonSync(apiPath);
 
-export {config, schemas, funMap, apiConfig};
+export {config, schemas, funApis, apiConfig};

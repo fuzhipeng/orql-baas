@@ -5,3 +5,4 @@ schema.json
 config.json
 api.json
 api.js
+plugin.js

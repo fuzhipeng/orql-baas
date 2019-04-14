@@ -1,5 +1,3 @@
-import {OptionType} from './components/OptionEditor';
-
 export interface Schema {
   name: string;
   table?: string;
@@ -46,6 +44,12 @@ export interface Fun {
   name: string;
   label: string;
   options?: FunOptions;
+}
+
+export enum OptionType {
+  Radio = 'radio',
+  Text = 'text',
+  Select = 'select'
 }
 
 export type FunOptions = {[key: string]: FunOption}

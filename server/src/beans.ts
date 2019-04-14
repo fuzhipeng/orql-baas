@@ -47,3 +47,27 @@ export interface Association {
   middle?: string;
   middleKey?: string;
 }
+
+export interface FunApi {
+  name: string;
+  label: string;
+  options?: FunOptions;
+  handle: (any) => void;
+}
+
+export enum OptionType {
+  Radio = 'radio',
+  Text = 'text',
+  Select = 'select'
+}
+
+export type FunOptions = {[key: string]: FunOption}
+
+export interface FunOption {
+  label: string;
+  type: OptionType;
+  values?: string[];
+  defaultValue?: string;
+  dep?: string;
+  required?: boolean;
+}

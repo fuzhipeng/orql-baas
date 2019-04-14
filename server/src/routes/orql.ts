@@ -1,6 +1,6 @@
 import {responseError, responseSuccess} from '../utils';
 import {router} from '../server';
-import {apiConfig, funMap} from '../config';
+import {apiConfig, funApis} from '../config';
 import orqlExecutor from '../orqlExecutor';
 
 router.all('/*', async (ctx, next) => {
@@ -42,8 +42,8 @@ router.all('/*', async (ctx, next) => {
     return;
   }
   if (fun) {
-    const _fun = funMap[fun];
-    if (!_fun) {
+    const apiFun = funApis[fun];
+    if (!apiFun) {
       responseError(ctx, `fun ${fun} not exists`);
       return;
     }
@@ -61,7 +61,7 @@ router.all('/*', async (ctx, next) => {
       page,
       size
     };
-    await _fun({
+    await apiFun.handle({
       res,
       db: orqlExecutor,
       req,
