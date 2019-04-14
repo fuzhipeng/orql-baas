@@ -1,7 +1,7 @@
-import {responseError, responseSuccess} from './utils';
-import {router} from './server';
-import {apiConfig, funMap} from './config';
-import orqlExecutor from './orqlExecutor';
+import {responseError, responseSuccess} from '../utils';
+import {router} from '../server';
+import {apiConfig, funMap} from '../config';
+import orqlExecutor from '../orqlExecutor';
 
 router.all('/*', async (ctx, next) => {
   const index = apiConfig.apis.findIndex(api => api.url == ctx.request.path);

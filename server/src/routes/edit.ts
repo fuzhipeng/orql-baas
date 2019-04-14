@@ -1,9 +1,9 @@
-// 同步表结构
-import {router} from './server';
-import orqlExecutor from './orqlExecutor';
-import {responseError, responseSuccess, writeJson} from './utils';
-import {apiConfig, apiPath, funMap, schemaPath, schemas} from './config';
+import {router} from '../server';
+import orqlExecutor from '../orqlExecutor';
+import {responseError, responseSuccess, writeJson} from '../utils';
+import {apiConfig, apiPath, funMap, schemaPath, schemas} from '../config';
 
+// 同步表结构
 router.put('/_edit/sync', async (ctx) => {
   await orqlExecutor.sync('update');
   responseSuccess(ctx);
