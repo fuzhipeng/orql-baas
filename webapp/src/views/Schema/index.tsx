@@ -223,6 +223,7 @@ class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
     return (
       <Modal
         title="创建schema"
+        destroyOnClose={true}
         visible={this.state.showDialog == 'createSchema'}
         okText="确定"
         cancelText="取消"
@@ -240,6 +241,7 @@ class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
         title="修改schema"
         visible={this.state.showDialog == 'updateSchema'}
         okText="确定"
+        destroyOnClose={true}
         cancelText="取消"
         onOk={this.handleUpdateSchema}
         onCancel={() => this.setState({showDialog: 'none'})}>
@@ -254,6 +256,7 @@ class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
     return (
       <Modal
         title="添加列"
+        destroyOnClose={true}
         visible={this.state.showDialog == 'createColumn'}
         okText="确定"
         cancelText="取消"
@@ -269,6 +272,7 @@ class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
     return (
       <Modal
         title="修改列"
+        destroyOnClose={true}
         visible={this.state.showDialog == 'updateColumn'}
         okText="确定"
         cancelText="取消"
@@ -282,6 +286,7 @@ class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
     return (
       <Modal
         title="添加关联"
+        destroyOnClose={true}
         visible={this.state.showDialog == 'createAssociation'}
         okText="确定"
         cancelText="取消"
@@ -299,6 +304,7 @@ class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
         title="修改关联"
         visible={this.state.showDialog == 'updateAssociation'}
         okText="确定"
+        destroyOnClose={true}
         cancelText="取消"
         onOk={this.handleUpdateAssociation}
         onCancel={() => this.setState({showDialog: 'none'})}>

@@ -125,6 +125,7 @@ class PluginView extends React.Component<IProps, IState> {
         title="新建插件"
         okText="确定"
         cancelText="取消"
+        destroyOnClose={true}
         onCancel={() => this.setState({showDialog: 'none'})}
         onOk={this.handleCreatePlugin}
         visible={showDialog == 'createPlugin'}>
@@ -145,6 +146,7 @@ class PluginView extends React.Component<IProps, IState> {
         title="新建插件"
         okText="确定"
         cancelText="取消"
+        destroyOnClose={true}
         onCancel={() => this.setState({showDialog: 'none'})}
         onOk={this.handleUpdatePlugin}
         visible={showDialog == 'updatePlugin'}>

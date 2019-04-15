@@ -8,7 +8,7 @@ import minimatch from 'minimatch';
 function getPlugins(api: ApiConfig) {
   return apiObject.plugins.filter(({matchType, matchValue}) =>
     (matchType == MatchType.Group && matchValue == api.group) ||
-    (matchType == MatchType.Url && minimatch(matchValue, api.url)));
+    (matchType == MatchType.Url && minimatch(api.url, matchValue)));
 }
 
 router.all('/*', async (ctx, next) => {

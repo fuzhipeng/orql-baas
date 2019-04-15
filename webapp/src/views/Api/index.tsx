@@ -288,6 +288,7 @@ class ApiView extends React.Component<IProps, IState> {
         visible={this.state.showDialog == 'createOrqlApi'}
         okText="确定"
         cancelText="取消"
+        destroyOnClose={true}
         width={800}
         style={{top: 20}}
         onOk={this.handleAddOrqlApi}
@@ -312,6 +313,7 @@ class ApiView extends React.Component<IProps, IState> {
         visible={this.state.showDialog == 'updateOrqlApi'}
         okText="确定"
         cancelText="取消"
+        destroyOnClose={true}
         width={800}
         style={{top: 20}}
         onOk={this.handleUpdateOrqlApi}
@@ -336,6 +338,7 @@ class ApiView extends React.Component<IProps, IState> {
         visible={this.state.showDialog == 'createFunApi'}
         okText="确定"
         cancelText="取消"
+        destroyOnClose={true}
         width={800}
         style={{top: 20}}
         onOk={this.handleAddFunApi}
@@ -360,6 +363,7 @@ class ApiView extends React.Component<IProps, IState> {
         visible={this.state.showDialog == 'updateFunApi'}
         okText="确定"
         cancelText="取消"
+        destroyOnClose={true}
         width={800}
         style={{top: 20}}
         onOk={this.handleUpdateFunApi}
@@ -381,6 +385,7 @@ class ApiView extends React.Component<IProps, IState> {
         visible={this.state.showDialog == 'createGroup'}
         okText="确定"
         cancelText="取消"
+        destroyOnClose={true}
         onOk={this.handleAddGroup}
         onCancel={() => this.setState({showDialog: 'none'})}>
         <GroupForm wrappedComponentRef={ref => this.createGroupForm = ref}/>
@@ -397,6 +402,7 @@ class ApiView extends React.Component<IProps, IState> {
         visible={this.state.showDialog == 'updateGroup'}
         okText="确定"
         cancelText="取消"
+        destroyOnClose={true}
         onOk={this.handleUpdateGroup}
         onCancel={() => this.setState({showDialog: 'none'})}>
         <GroupForm name={currentGroupName} wrappedComponentRef={ref => this.updateGroupForm = ref}/>
