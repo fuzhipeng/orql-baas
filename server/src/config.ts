@@ -1,7 +1,7 @@
 import path from "path";
 import process from "process";
 import * as fs from 'fs';
-import {ApiObject, Config, FunApi, FunPlugin, Schema} from './beans';
+import {ApiObject, Config, FunApi, Schema} from './beans';
 import {readJsonSync, writeJsonSync} from './utils';
 
 const cwd = process.cwd();
@@ -9,7 +9,6 @@ export const configPath = path.resolve(cwd, './config.json');
 export const schemaPath = path.resolve(cwd, './schema.json');
 export const apiPath = path.resolve(cwd, './api.json');
 export const apiJsPath = path.resolve(cwd, './api.js');
-export const pluginJsPath = path.resolve(cwd, './plugin.js');
 
 if (!fs.existsSync(configPath)) {
   const exampleConfig: Config = {
@@ -38,13 +37,12 @@ const schemas: Schema[] = readJsonSync(schemaPath);
 
 if (!fs.existsSync(apiPath)) {
   console.log('api.json not exist');
-  writeJsonSync(apiPath, {apis: [], groups: [], plugins: []});
+  writeJsonSync(apiPath, {apis: [], groups: []});
 }
 
 const funApis: {[name: string]: FunApi} = require(apiJsPath);
 
-const funPlugins: {[name: string]: FunPlugin} = require(pluginJsPath);
 
 const apiObject: ApiObject = readJsonSync(apiPath);
 
-export {config, schemas, funApis, apiObject, funPlugins};
+export {config, schemas, funApis, apiObject};

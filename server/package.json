@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "dev": "node ./dist"
+    "dev": "yarn run tsc && node ./dist --dev"
   },
   "dependencies": {
     "@koa/cors": "2",

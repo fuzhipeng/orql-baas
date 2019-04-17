@@ -5,7 +5,6 @@ import ApiView from '../Api';
 import {inject, observer} from 'mobx-react';
 import AppStore from '../../stores/AppStore';
 import FileView from '../File';
-import PluginView from '../Plugin';
 import SettingView from '../Setting';
 import {Dropdown, Menu} from 'antd';
 import {AppMenu} from '../../beans';
@@ -72,7 +71,6 @@ class HomeView extends React.Component<IProps> {
             <ItemLink label="schema" to="/schema"/>
             <ItemLink label="api" to="/api"/>
             <ItemLink label="文件" to="/file" />
-            <ItemLink label="插件" to="/plugin"/>
             <ItemLink label="设置" to="/setting" />
           </div>
         </div>
@@ -81,7 +79,6 @@ class HomeView extends React.Component<IProps> {
             <Route path="/schema" component={SchemaView} />
             <Route path="/api" component={ApiView} />
             <Route path="/file" component={FileView} />
-            <Route path="/plugin" component={PluginView} />
             <Route path="/setting" component={SettingView} />
           </Switch>
         </div>

@@ -6,9 +6,7 @@ import orqlExecutor from './orqlExecutor';
 import {config} from './config';
 
 const app = new Koa();
-const router = new Router();
-
-export {router};
+export const router = new Router();
 
 export interface ServerOptions {
   dev?: boolean;
