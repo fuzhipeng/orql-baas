@@ -1,7 +1,16 @@
 import {router} from '../server';
 import orqlExecutor from '../orqlExecutor';
 import {responseError, responseSuccess, writeJson} from '../utils';
-import {apiObject, apiJsonPath, plugins, schemaJsonPath, schemas, pluginConfigs, pluginJsonPath} from '../config';
+import {
+  apiObject,
+  apiJsonPath,
+  plugins,
+  schemaJsonPath,
+  schemas,
+  pluginConfigs,
+  pluginJsonPath,
+  config, configJsonPath
+} from '../config';
 
 // 同步表结构
 router.put('/_edit/sync', async (ctx) => {
@@ -279,5 +288,13 @@ router.delete('/_edit/pluginConfigs/:index', async (ctx) => {
   const {index} = ctx.params;
   pluginConfigs.splice(index, 1);
   await writeJson(pluginJsonPath, pluginConfigs);
+  responseSuccess(ctx);
+});
+
+// 修改orql配置
+router.put('/_edit/config/orql', async (ctx) => {
+  const orql = ctx.request.body;
+  config.orql = orql;
+  await writeJson(configJsonPath, config);
   responseSuccess(ctx);
 });

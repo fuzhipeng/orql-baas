@@ -163,7 +163,13 @@ class PluginView extends React.Component<IProps, IState> {
     const {currentPluginIndex} = this.state;
     if (currentPluginIndex == undefined) return;
     const config = configs[currentPluginIndex];
-    return JSON.stringify(config, null, 2);
+    return (
+      <div>
+        <div>插件: {config.name}</div>
+        <div>拦截: {config.matchType} {config.matchValue}</div>
+        <div>配置: {config.options ? config.options : '无'}</div>
+      </div>
+    );
   }
   render() {
     const {pluginStore: {configs}} = this.props;
