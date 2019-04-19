@@ -1,7 +1,7 @@
 import {router} from '../server';
 import orqlExecutor from '../orqlExecutor';
 import {responseError, responseSuccess, writeJson} from '../utils';
-import {apiObject, apiJsonPath, funApis, schemaJsonPath, schemas} from '../config';
+import {apiObject, apiJsonPath, plugins, schemaJsonPath, schemas} from '../config';
 
 // 同步表结构
 router.put('/_edit/sync', async (ctx) => {
@@ -246,8 +246,8 @@ router.put('/_edit/apis/:url', async (ctx) => {
   responseSuccess(ctx);
 });
 
-// 获取fun
-router.get('/_edit/funs', async (ctx) => {
-  const array = Object.keys(funApis).map(name => ({...funApis[name], name}));
+// 获取plugins
+router.get('/_edit/plugins', async (ctx) => {
+  const array = Object.keys(plugins).map(name => ({...plugins[name], name}));
   responseSuccess(ctx, array);
 });

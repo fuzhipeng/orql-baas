@@ -1,6 +1,6 @@
 import {responseError, responseSuccess} from '../utils';
 import {router} from '../server';
-import {apiObject, funApis} from '../config';
+import {apiObject, plugins} from '../config';
 import orqlExecutor from '../orqlExecutor';
 import {ApiConfig} from '../beans';
 import minimatch from 'minimatch';
@@ -44,7 +44,7 @@ router.all('/*', async (ctx, next) => {
     return;
   }
   if (fun) {
-    const apiFun = funApis[fun];
+    const apiFun = plugins[fun];
     if (!apiFun) {
       responseError(ctx, `fun ${fun} not exists`);
       return;

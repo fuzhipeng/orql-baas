@@ -48,10 +48,11 @@ export interface Association {
   middleKey?: string;
 }
 
-export interface FunApi {
+export interface Plugin {
   label: string;
-  options?: FunOptions;
-  handle: (any) => void;
+  options?: PluginOptions;
+  before: (any) => void;
+  after: (any) => void;
 }
 
 export enum OptionType {
@@ -60,9 +61,9 @@ export enum OptionType {
   Select = 'select'
 }
 
-export type FunOptions = {[key: string]: FunOption}
+export type PluginOptions = {[key: string]: PluginOption}
 
-export interface FunOption {
+export interface PluginOption {
   label: string;
   type: OptionType;
   values?: string[];
