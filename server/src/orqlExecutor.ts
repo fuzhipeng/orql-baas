@@ -2,7 +2,7 @@ import OrqlExecutor from 'orql-executor';
 import {config, schemas} from './config';
 import {Columns} from 'orql-executor/lib/SchemaManager';
 
-const orqlExecutor = new OrqlExecutor(config.orql);
+const orqlExecutor = config.orql.connection ? new OrqlExecutor(config.orql) : undefined;
 
 schemas.forEach(schema => {
   const columns: Columns = {};
@@ -12,7 +12,7 @@ schemas.forEach(schema => {
   schema.associations.forEach(association => {
     columns[association.name] = association;
   });
-  orqlExecutor.addSchema(schema.name, columns);
+  orqlExecutor && orqlExecutor.addSchema(schema.name, columns);
 });
 
 export default orqlExecutor;

@@ -9,6 +9,7 @@ export const configJsonPath = path.resolve(cwd, './config.json');
 export const schemaJsonPath = path.resolve(cwd, './schema.json');
 export const apiJsonPath = path.resolve(cwd, './api.json');
 // export const apiJsPath = path.resolve(cwd, './api.js');
+export const indexJsPath = path.resolve(cwd, './index.js');
 
 if (!fs.existsSync(configJsonPath)) {
   // const exampleConfig: Config = {

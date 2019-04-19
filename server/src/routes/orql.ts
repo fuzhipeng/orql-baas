@@ -10,6 +10,10 @@ router.all('/*', async (ctx, next) => {
   if (!api) {
     return next();
   }
+  if (!orqlExecutor) {
+    responseError(ctx, `db not connect`);
+    return;
+  }
   const {page, size, ...other} = ctx.request.query;
   const params = {...other, ...ctx.request.body};
   const {orql, fun, options} = api;

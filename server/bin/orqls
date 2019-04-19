@@ -2,7 +2,7 @@
 const path = require('path');
 const fs = require('fs');
 const {argv} = require('yargs');
-const {start, configJsonPath, schemaJsonPath, apiJsonPath} = require('../dist');
+const {start, configJsonPath, schemaJsonPath, apiJsonPath, indexJsPath} = require('../dist');
 
 const cwd = process.cwd();
 
@@ -17,11 +17,19 @@ function writeJsonSync(path, obj) {
 const action = argv._[0];
 
 if (action === 'start') {
-  start().catch(err => console.error(err));
+  start().then(() => {
+      if (fs.existsSync(indexJsPath)) {
+        require(indexJsPath);
+      }
+  }).catch(err => console.error(err));
 }
 
 if (action === 'dev') {
-  start({dev: true}).catch(err => console.error(err));
+  start({dev: true}).then(() => {
+    if (fs.existsSync(indexJsPath)) {
+      require(indexJsPath);
+    }
+  }).catch(err => console.error(err));
 }
 
 if (argv.init) {

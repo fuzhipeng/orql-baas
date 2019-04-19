@@ -5,7 +5,7 @@ import {apiObject, apiJsonPath, plugins, schemaJsonPath, schemas} from '../confi
 
 // 同步表结构
 router.put('/_edit/sync', async (ctx) => {
-  await orqlExecutor.sync('update');
+  orqlExecutor && await orqlExecutor.sync('update');
   responseSuccess(ctx);
 });
 
