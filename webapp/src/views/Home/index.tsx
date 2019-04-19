@@ -8,6 +8,7 @@ import FileView from '../File';
 import SettingView from '../Setting';
 import {Dropdown, Menu} from 'antd';
 import {AppMenu} from '../../beans';
+import PluginView from '../Plugin';
 
 interface IProps extends RouteComponentProps {
   appStore: AppStore;
@@ -70,6 +71,7 @@ class HomeView extends React.Component<IProps> {
           <div>
             <ItemLink label="schema" to="/schema"/>
             <ItemLink label="api" to="/api"/>
+            <ItemLink label="插件" to="/plugin"/>
             <ItemLink label="文件" to="/file" />
             <ItemLink label="设置" to="/setting" />
           </div>
@@ -78,6 +80,7 @@ class HomeView extends React.Component<IProps> {
           <Switch>
             <Route path="/schema" component={SchemaView} />
             <Route path="/api" component={ApiView} />
+            <Route path="/plugin" component={PluginView} />
             <Route path="/file" component={FileView} />
             <Route path="/setting" component={SettingView} />
           </Switch>
