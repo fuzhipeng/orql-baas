@@ -18,6 +18,7 @@ const PluginTitle = (props: { selected: boolean, config: PluginConfig, onClick: 
         cursor: 'pointer'
       }}>
       <div style={{fontSize: 12}}>{props.config.name} {props.config.comment}</div>
+      <div style={{fontSize: 10}}>{props.config.matchType} {props.config.matchValue}</div>
     </div>
   )
 }
@@ -81,12 +82,12 @@ class PluginView extends React.Component<IProps, IState> {
     form.validateFields(async (err, values) => {
       if (err) return;
       const {pluginStore} = this.props;
-      const {name, comment, ...options} = values;
+      const {name, matchType, matchValue, comment, ...options} = values;
       for (const key in options) {
         options[key.substr(1)] = options[key];
         delete options[key];
       }
-      await pluginStore.addConfig({name, comment, options: JSON.stringify(options)});
+      await pluginStore.addConfig({name, matchType, matchValue, comment, options: JSON.stringify(options)});
       this.setState({
         showDialog: 'none'
       });
@@ -98,12 +99,12 @@ class PluginView extends React.Component<IProps, IState> {
       if (err) return;
       const {pluginStore} = this.props;
       const {currentPluginIndex} = this.state;
-      const {name, comment, ...options} = values;
+      const {name, matchType, matchValue, comment, ...options} = values;
       for (const key in options) {
         options[key.substr(1)] = options[key];
         delete options[key];
       }
-      await pluginStore.updateConfig(currentPluginIndex!, {name, comment, options: JSON.stringify(options)});
+      await pluginStore.updateConfig(currentPluginIndex!, {name, matchType, matchValue, comment, options: JSON.stringify(options)});
       this.setState({
         showDialog: 'none'
       });

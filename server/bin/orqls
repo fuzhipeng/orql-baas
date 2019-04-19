@@ -2,7 +2,7 @@
 const path = require('path');
 const fs = require('fs');
 const {argv} = require('yargs');
-const {start, configJsonPath, schemaJsonPath, apiJsonPath, indexJsPath} = require('../dist');
+const {start, configJsonPath, schemaJsonPath, apiJsonPath, indexJsPath, pluginJsonPath} = require('../dist');
 
 const cwd = process.cwd();
 
@@ -36,5 +36,6 @@ if (argv.init) {
   !fs.existsSync(schemaJsonPath) && writeJsonSync(schemaJsonPath, []);
   !fs.existsSync(configJsonPath) && writeJsonSync(configJsonPath, {port: 3000, orql: {}});
   !fs.existsSync(apiJsonPath) && writeJsonSync(apiJsonPath, {groups: [], apis: []});
+  !fs.existsSync(pluginJsonPath) && writeJsonSync(pluginJsonPath, []);
   process.exit(0);
 }

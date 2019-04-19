@@ -1,7 +1,7 @@
 import {router} from '../server';
 import orqlExecutor from '../orqlExecutor';
 import {responseError, responseSuccess, writeJson} from '../utils';
-import {apiObject, apiJsonPath, plugins, schemaJsonPath, schemas} from '../config';
+import {apiObject, apiJsonPath, plugins, schemaJsonPath, schemas, pluginConfigs, pluginJsonPath} from '../config';
 
 // 同步表结构
 router.put('/_edit/sync', async (ctx) => {
@@ -250,4 +250,34 @@ router.put('/_edit/apis/:url', async (ctx) => {
 router.get('/_edit/plugins', async (ctx) => {
   const array = Object.keys(plugins).map(name => ({...plugins[name], name}));
   responseSuccess(ctx, array);
+});
+
+// 获取插件配置
+router.get('/_edit/pluginConfigs', async (ctx) => {
+  responseSuccess(ctx, pluginConfigs);
+});
+
+// 添加插件配置
+router.post('/_edit/pluginConfigs', async (ctx) => {
+  const config = ctx.request.body;
+  pluginConfigs.push(config);
+  await writeJson(pluginJsonPath, pluginConfigs);
+  responseSuccess(ctx);
+});
+
+// 修改插件配置
+router.put('/_edit/pluginConfigs/:index', async (ctx) => {
+  const config = ctx.request.body;
+  const {index} = ctx.params;
+  pluginConfigs[index] = config;
+  await writeJson(pluginJsonPath, pluginConfigs);
+  responseSuccess(ctx);
+});
+
+// 删除插件配置
+router.delete('/_edit/pluginConfigs/:index', async (ctx) => {
+  const {index} = ctx.params;
+  pluginConfigs.splice(index, 1);
+  await writeJson(pluginJsonPath, pluginConfigs);
+  responseSuccess(ctx);
 });

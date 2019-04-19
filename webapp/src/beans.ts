@@ -39,6 +39,8 @@ export interface PluginConfig {
   weight?: number;
   comment?: string;
   options?: string;
+  matchType: MatchType;
+  matchValue: string;
 }
 
 export enum MatchType {

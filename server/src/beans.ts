@@ -51,14 +51,28 @@ export interface Association {
 export interface Plugin {
   label: string;
   options?: PluginOptions;
-  before: (any) => void;
-  after: (any) => void;
+  before: (any) => boolean | undefined;
+  after: (any) => boolean | undefined;
+}
+
+export interface PluginConfig {
+  name: string;
+  weight?: number;
+  comment?: string;
+  options?: string;
+  matchType: MatchType;
+  matchValue: string;
 }
 
 export enum OptionType {
   Radio = 'radio',
   Text = 'text',
   Select = 'select'
+}
+
+export enum MatchType {
+  Group = 'group',
+  Url = 'url'
 }
 
 export type PluginOptions = {[key: string]: PluginOption}

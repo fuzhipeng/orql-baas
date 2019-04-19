@@ -94,17 +94,20 @@ class ApiView extends React.Component<IProps, IState> {
     }
   }, {
     label: '新建api',
-    subMenus: [{
-      label: 'orql',
-      onClick: () => this.setState({
-        showDialog: 'createOrqlApi'
-      })
-    }, {
-      label: 'fun',
-      onClick: () => this.setState({
-        showDialog: 'createFunApi'
-      })
-    }]
+    onClick: () => this.setState({
+      showDialog: 'createOrqlApi'
+    })
+    // subMenus: [{
+    //   label: 'orql',
+    //   onClick: () => this.setState({
+    //     showDialog: 'createOrqlApi'
+    //   })
+    // }, {
+    //   label: 'fun',
+    //   onClick: () => this.setState({
+    //     showDialog: 'createFunApi'
+    //   })
+    // }]
   }, {
     label: '编辑api',
     onClick: () => {

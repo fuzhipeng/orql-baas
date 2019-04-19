@@ -1,12 +1,28 @@
 import {responseError, responseSuccess} from '../utils';
 import {router} from '../server';
-import {apiObject, plugins} from '../config';
+import {apiObject, pluginConfigs, plugins} from '../config';
 import orqlExecutor from '../orqlExecutor';
-import {ApiConfig} from '../beans';
+import {ApiConfig, MatchType} from '../beans';
 import minimatch from 'minimatch';
+
+function getPlugins(url: string, api?: ApiConfig) {
+  return pluginConfigs.filter(({matchType, matchValue}) =>
+    (matchType == MatchType.Url && minimatch(url, matchValue)) ||
+    (matchType == MatchType.Group && (api != undefined && matchValue == api.group))
+  );
+}
 
 router.all('/*', async (ctx, next) => {
   const api = apiObject.apis.find(api => api.url == ctx.request.path);
+  const matchConfigs = getPlugins(ctx.request.path, api);
+  for (const config of matchConfigs) {
+    const plugin = plugins[config.name];
+    if (plugin && plugin.before) {
+      const options = config.options ? JSON.parse(config.options) : undefined;
+      const result = await plugin.before({ctx, options});
+      if (result == false) return;
+    }
+  }
   if (!api) {
     return next();
   }
@@ -44,34 +60,42 @@ router.all('/*', async (ctx, next) => {
         result = await session.delete(orql, params);
         break;
     }
+    for (const config of matchConfigs) {
+      const plugin = plugins[config.name];
+      if (plugin && plugin.before) {
+        const options = config.options ? JSON.parse(config.options) : undefined;
+        const _result = await plugin.after({ctx, options, result});
+        if (_result == false) return;
+      }
+    }
     responseSuccess(ctx, result);
     return;
   }
-  if (fun) {
-    const apiFun = plugins[fun];
-    if (!apiFun) {
-      responseError(ctx, `fun ${fun} not exists`);
-      return;
-    }
-    const res = {
-      json: (body: any) => {
-        ctx.response.type = 'json';
-        ctx.response.body = body;
-      },
-      string: (text: string) => {
-        ctx.response.body = text;
-      }
-    }
-    const req = {
-      params,
-      page,
-      size
-    };
-    await apiFun.handle({
-      res,
-      db: orqlExecutor,
-      req,
-      options: options ? JSON.parse(options) : {}
-    });
-  }
+  // if (fun) {
+  //   const apiFun = plugins[fun];
+  //   if (!apiFun) {
+  //     responseError(ctx, `fun ${fun} not exists`);
+  //     return;
+  //   }
+  //   const res = {
+  //     json: (body: any) => {
+  //       ctx.response.type = 'json';
+  //       ctx.response.body = body;
+  //     },
+  //     string: (text: string) => {
+  //       ctx.response.body = text;
+  //     }
+  //   }
+  //   const req = {
+  //     params,
+  //     page,
+  //     size
+  //   };
+  //   await apiFun.handle({
+  //     res,
+  //     db: orqlExecutor,
+  //     req,
+  //     options: options ? JSON.parse(options) : {}
+  //   });
+  // }
 });

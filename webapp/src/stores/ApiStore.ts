@@ -13,10 +13,10 @@ export default class ApiStore {
   @action async load() {
     const groups = await httpGetWithData<string[]>('/_edit/apiGroups');
     const apis = await httpGetWithData<Api[]>('/_edit/apis');
-    const funs = await httpGetWithData<Fun[]>('/_edit/funs');
+    // const funs = await httpGetWithData<Fun[]>('/_edit/funs');
     this.groups.replace(groups!);
     this.apis.replace(apis!);
-    this.funs.replace(funs!);
+    // this.funs.replace(funs!);
   }
 
   @action async addApi(api: Api) {
