@@ -1,7 +1,10 @@
 import start, {ServerOptions} from './server';
+import {configJsonPath, schemaJsonPath, apiJsonPath} from './config';
 
-const options: ServerOptions = {};
-options.dev = process.argv.findIndex(arg => arg == '--dev') >= 0;
+export {start, configJsonPath, schemaJsonPath, apiJsonPath};
 
-start(options)
-  .catch(err => console.error(err));
+// const options: ServerOptions = {};
+// options.dev = process.argv.findIndex(arg => arg == '--dev') >= 0;
+//
+// start(options)
+//   .catch(err => console.error(err));

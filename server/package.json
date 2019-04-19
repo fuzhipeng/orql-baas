@@ -14,7 +14,8 @@
     "koa-bodyparser": "^4.2.1",
     "koa-router": "^7.4.0",
     "minimatch": "^3.0.4",
-    "orql-executor": "^0.0.1"
+    "orql-executor": "^0.0.1",
+    "yargs": "^13.2.2"
   },
   "devDependencies": {
     "@types/koa-bodyparser": "^4.2.2",

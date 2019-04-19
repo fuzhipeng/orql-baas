@@ -1,2 +1,32 @@
 #!/usr/bin/env node
+const path = require('path');
+const fs = require('fs');
+const {argv} = require('yargs');
+const {start, configJsonPath, schemaJsonPath, apiJsonPath} = require('../dist');
 
+const cwd = process.cwd();
+
+function writeTextSync(path, text) {
+  fs.writeFileSync(path, text, {encoding: 'utf-8'});
+}
+
+function writeJsonSync(path, obj) {
+  writeTextSync(path, JSON.stringify(obj, null, 2));
+}
+
+const action = argv._[0];
+
+if (action === 'start') {
+  start().catch(err => console.error(err));
+}
+
+if (action === 'dev') {
+  start({dev: true}).catch(err => console.error(err));
+}
+
+if (argv.init) {
+  !fs.existsSync(schemaJsonPath) && writeJsonSync(schemaJsonPath, []);
+  !fs.existsSync(configJsonPath) && writeJsonSync(configJsonPath, {port: 3000, orql: {}});
+  !fs.existsSync(apiJsonPath) && writeJsonSync(apiJsonPath, {groups: [], apis: []});
+  process.exit(0);
+}

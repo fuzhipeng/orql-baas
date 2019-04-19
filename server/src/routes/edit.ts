@@ -1,7 +1,7 @@
 import {router} from '../server';
 import orqlExecutor from '../orqlExecutor';
 import {responseError, responseSuccess, writeJson} from '../utils';
-import {apiObject, apiPath, funApis, funPlugins, schemaPath, schemas} from '../config';
+import {apiObject, apiJsonPath, funApis, schemaJsonPath, schemas} from '../config';
 
 // 同步表结构
 router.put('/_edit/sync', async (ctx) => {
@@ -23,7 +23,7 @@ router.post('/_edit/schemas', async (ctx) => {
   }
   const schema = {name, table, columns: [], associations: []};
   schemas.push(schema);
-  await writeJson(schemaPath, schemas);
+  await writeJson(schemaJsonPath, schemas);
   responseSuccess(ctx);
 });
 
@@ -36,7 +36,7 @@ router.delete('/_edit/schemas/:name', async (ctx) => {
     return;
   }
   schemas.splice(index, 1);
-  await writeJson(schemaPath, schemas);
+  await writeJson(schemaJsonPath, schemas);
   responseSuccess(ctx);
 });
 
@@ -50,7 +50,7 @@ router.put('/_edit/schemas/:name', async (ctx) => {
   const {name, table} = ctx.request.body;
   schema.name = name;
   schema.table = table;
-  await writeJson(schemaPath, schemas);
+  await writeJson(schemaJsonPath, schemas);
   responseSuccess(ctx);
 });
 
@@ -67,7 +67,7 @@ router.post('/_edit/schemas/:name/columns', async (ctx) => {
     return;
   }
   schema.columns.push(column);
-  await writeJson(schemaPath, schemas);
+  await writeJson(schemaJsonPath, schemas);
   responseSuccess(ctx);
 });
 
@@ -82,7 +82,7 @@ router.put('/_edit/schemas/:schemaName/columns/:columnName', async (ctx) => {
   }
   const index = schema.columns.findIndex(column => column.name == columnName);
   schema.columns[index] = column;
-  await writeJson(schemaPath, schemas);
+  await writeJson(schemaJsonPath, schemas);
   responseSuccess(ctx);
 });
 
@@ -96,7 +96,7 @@ router.delete('/_edit/schemas/:schemaName/columns/:columnName', async (ctx) => {
   }
   const index = schema.columns.findIndex(column => column.name == columnName);
   schema.columns.splice(index, 1);
-  await writeJson(schemaPath, schemas);
+  await writeJson(schemaJsonPath, schemas);
   responseSuccess(ctx);
 });
 
@@ -110,7 +110,7 @@ router.post('/_edit/schemas/:name/associations', async (ctx) => {
     return;
   }
   schema.associations.push(association);
-  await writeJson(schemaPath, schemas);
+  await writeJson(schemaJsonPath, schemas);
   responseSuccess(ctx);
 });
 
@@ -128,7 +128,7 @@ router.delete('/_edit/schemas/:schemaName/associations/:associationName', async 
     return;
   }
   schema.associations.splice(index, 1);
-  await writeJson(schemaPath, schemas);
+  await writeJson(schemaJsonPath, schemas);
   responseSuccess(ctx);
 });
 
@@ -147,7 +147,7 @@ router.put('/_edit/schemas/:schemaName/associations/:associationName', async (ct
     return;
   }
   schema.associations[index] = association;
-  await writeJson(schemaPath, schemas);
+  await writeJson(schemaJsonPath, schemas);
   responseSuccess(ctx);
 });
 
@@ -159,7 +159,7 @@ router.post('/_edit/apiGroups', async (ctx) => {
     return;
   }
   apiObject.groups.push(name);
-  await writeJson(apiPath, apiObject);
+  await writeJson(apiJsonPath, apiObject);
   responseSuccess(ctx);
 });
 
@@ -185,7 +185,7 @@ router.put('/_edit/apiGroups/:name', async (ctx) => {
   apiObject.apis
     .filter(api => api.group == old)
     .forEach(api => api.group = name);
-  await writeJson(apiPath, apiObject);
+  await writeJson(apiJsonPath, apiObject);
   responseSuccess(ctx);
 });
 
@@ -202,7 +202,7 @@ router.delete('/_edit/apiGroups/:name', async (ctx) => {
     return;
   }
   apiObject.groups.splice(index, 1);
-  await writeJson(apiPath, apiObject);
+  await writeJson(apiJsonPath, apiObject);
   responseSuccess(ctx);
 });
 
@@ -210,7 +210,7 @@ router.delete('/_edit/apiGroups/:name', async (ctx) => {
 router.post('/_edit/apis', async (ctx) => {
   const api = ctx.request.body;
   apiObject.apis.push(api);
-  await writeJson(apiPath, apiObject);
+  await writeJson(apiJsonPath, apiObject);
   responseSuccess(ctx);
 });
 
@@ -228,7 +228,7 @@ router.delete('/_edit/apis/:url', async (ctx) => {
     return;
   }
   apiObject.apis.splice(index, 1);
-  await writeJson(apiPath, apiObject);
+  await writeJson(apiJsonPath, apiObject);
   responseSuccess(ctx);
 });
 
@@ -242,7 +242,7 @@ router.put('/_edit/apis/:url', async (ctx) => {
     return;
   }
   apiObject.apis[index] = api;
-  await writeJson(apiPath, apiObject);
+  await writeJson(apiJsonPath, apiObject);
   responseSuccess(ctx);
 });
 

@@ -16,7 +16,7 @@ export default async function start(options?: ServerOptions) {
   options = options || {};
   await orqlExecutor.sync('update');
 
-  if (options.dev) {
+  if (options!.dev) {
     console.warn('start server dev mode');
     require('./routes/edit');
   }
