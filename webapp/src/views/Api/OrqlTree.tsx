@@ -4,7 +4,7 @@ import {Association, Schema} from '../../beans';
 import QueryBuilder from '../../components/QueryBuilder';
 import {OrqlOps} from '../../config';
 import Parser from 'orql-parser';
-import {OrqlNode, OrqlExp, OrqlItem, OrqlLogicExp, OrqlLogicOp, OrqlNestExp, OrqlCompareExp, OrqlParam, OrqlValue, OrqlColumn, OrqlNull, OrqlOrder} from 'orql-parser/lib/OrqlNode';
+import {OrqlNode, OrqlExp, OrqlItem, OrqlLogicExp, OrqlLogicOp, OrqlNestExp, OrqlCompareExp, OrqlParam, OrqlValue, OrqlColumn, OrqlNull, OrqlOrder, OrqlAllItem} from 'orql-parser/lib/OrqlNode';
 
 const {TreeNode} = Tree;
 
@@ -13,6 +13,7 @@ export type ExpMap = {[key: string]: string};
 export type OrderMap = {[key: string]: string};
 
 interface OrqlItemWrapper {
+  key: string;
   path: string;
   item: OrqlItem;
   schema: Schema;
@@ -144,22 +145,24 @@ interface IState {
 
 class OrqlTree extends React.Component<OrqlTreeProps, IState> {
 
-  private getOrqlParseObject = (orql?: string): {selectedKeys: string[], expMap: ExpMap, orderMap: OrderMap, tree?: OrqlNode} => {
+  private getOrqlParseObject = (orql?: string): {selectedKeys: string[], expandedKeys: string[], expMap: ExpMap, orderMap: OrderMap, tree?: OrqlNode} => {
     const selectedKeys: string[] = [];
+    const expandedKeys: string[] = [];
     const expMap: ExpMap = {};
     const orderMap: OrderMap = {};
-    if (!orql) return {selectedKeys, expMap, orderMap};
+    if (!orql) return {selectedKeys, expandedKeys, expMap, orderMap};
     const orqlTree = Parser.parse(orql);
     const root = orqlTree.item;
-    // 获取root
-    selectedKeys.push(root.name);
+    // 展开父节点
+    expandedKeys.push(root.name);
     const stack: OrqlItemWrapper[] = [{
       item: root,
       path: root.name,
+      key: root.name,
       schema: this.getSchema(root.name)
     }];
     while (stack.length > 0) {
-      const {item, schema, path} = stack.pop()!;
+      const {item, schema, path, key} = stack.pop()!;
       if (item.where && item.where.exp) {
         // 获取exp
         expMap[path] = orqlExpToString(item.where.exp);
@@ -169,8 +172,13 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
       }
       if (item.children) {
         for (const childItem of item.children) {
-          const column = schema.columns.find(column => column.name == childItem.name);
+          if (childItem instanceof OrqlAllItem) {
+            // 全选
+            selectedKeys.push(key);
+            continue;
+          }
           const childPath = `${path}.${childItem.name}`;
+          const column = schema.columns.find(column => column.name == childItem.name);
           if (column) {
             // 获取column
             selectedKeys.push(`column.${childPath}`);
@@ -179,17 +187,20 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
           const association = schema.associations.find(association => association.name == childItem.name);
           if (association) {
             // 获取ref
-            selectedKeys.push(`${isArray(association) ? 'array' : 'object'}.${childPath}`);
+            const key = `${isArray(association) ? 'array' : 'object'}.${childPath}`;
+            // selectedKeys.push(key);
+            expandedKeys.push(key);
             stack.push({
               item: childItem,
               path: childPath,
+              key,
               schema: this.getSchema(association.refName)
             });
           }
         }
       }
     }
-    return {selectedKeys, expMap, orderMap, tree: orqlTree};
+    return {selectedKeys, expandedKeys, expMap, orderMap, tree: orqlTree};
   }
 
   private getSchema = (name: string) => {
@@ -204,7 +215,7 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
 
   state: IState = {
     schemaName: this.root ? this.root.name : undefined,
-    expandedKeys: [],
+    expandedKeys: this.parseObject.expandedKeys,
     selectedKeys: this.parseObject.selectedKeys,
     op: this.parseObject.tree ? this.parseObject.tree.op : 'query',
     isArray: this.root ? this.root.isArray : false,
@@ -253,7 +264,6 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
   private genOrql = () => {
     const {op, selectedKeys, expandedKeys, expMap, orderMap, schemaName, isArray} = this.state;
     if (selectedKeys.length == 0) return;
-    console.log(expandedKeys);
     const selectedKeyTmps: KeyTmp[] = [];
     const expandedKeyTmps: KeyTmp[] = [];
     // 先切割缓存起来
@@ -306,8 +316,7 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
         });
       }
     }
-    for (let i = 0; i < selectedKeyTmps.length; i ++) {
-      const keyTmp = selectedKeyTmps[i];
+    for (const keyTmp of selectedKeyTmps) {
       // 获取父节点
       const parent = this.getParent(root, keyTmp.arr)!;
       // 类型 array object column
@@ -319,6 +328,8 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
       }
     }
     const orql = op + ' ' + selectItemToOrql(root);
+    this.orql = orql;
+    console.log('gen orql: ' + orql);
     this.props.onChange(orql);
   }
 
@@ -332,6 +343,7 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
           op: root.op,
           isArray: root.item.isArray,
           selectedKeys: parseObject.selectedKeys,
+          expandedKeys: parseObject.expandedKeys,
           expMap: parseObject.expMap,
           orderMap: parseObject.orderMap
         });
@@ -353,6 +365,7 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
         checkStrictly
         onExpand={this.handleExpand}
         checkedKeys={selectedKeys}
+        expandedKeys={expandedKeys}
         onCheck={keys => this.handleCheck(keys)}>
         <TreeNode key={schema.name} title={(
           <TreeNodeTitle
