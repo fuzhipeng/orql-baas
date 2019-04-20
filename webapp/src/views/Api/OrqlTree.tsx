@@ -18,6 +18,7 @@ export interface OrqlTreeProps {
   expMap: ExpMap;
   orderMap: OrderMap;
   onChangeExpMap: (expMap: ExpMap) => void;
+  onChangeExpandedKeys: (expandedKeys: string[]) => void;
 }
 
 function isArray(association: Association) {
@@ -71,6 +72,7 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
     onChangeSelectKeys(keys.checked);
   }
   handleExpand = (expandedKeys: string[]) => {
+    this.props.onChangeExpandedKeys(expandedKeys);
     this.setState({expandedKeys});
   }
   renderTree() {

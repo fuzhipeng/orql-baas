@@ -24,6 +24,7 @@ interface IState {
   selectedKeys: string[];
   expMap: ExpMap;
   orderMap: OrderMap;
+  expandedKeys: string[];
 }
 
 interface KeyTmp {
@@ -38,6 +39,7 @@ interface SelectItem {
   order?: string;
   columns: string[];
   children: SelectItem[];
+  selectAll: boolean;
 }
 
 // orql表达式转string
@@ -78,14 +80,21 @@ function orqlOrdersToString(orders: OrqlOrder[]): string {
 // select item转orql
 function selectItemToOrql(selectItem: SelectItem): string {
   let orql = selectItem.name;
-  // if (selectItem.exp) orql += '(' + selectItem.exp + ')';
   orql += getExpAndOrder(selectItem.exp, selectItem.order);
   // 全放一个数组先
-  let childOrqlArr = [
-    ...selectItem.columns,
-    ...selectItem.children
-      .map(child => selectItemToOrql(child))
-  ];
+  // const childOrqlArr = [
+  //   ...selectItem.columns,
+  //   ...selectItem.children
+  //     .map(child => selectItemToOrql(child))
+  // ];
+  const childOrqlArr: string[] = [];
+  if (selectItem.selectAll) {
+    childOrqlArr.push('*');
+    childOrqlArr.push(...selectItem.columns.map(column => '!' + column));
+  } else {
+    childOrqlArr.push(...selectItem.columns);
+  }
+  childOrqlArr.push(...selectItem.children.map(child => selectItemToOrql(child)));
   if (childOrqlArr.length > 0) {
     const start = selectItem.array ? ': [' : ': {';
     const end = selectItem.array ? ']' : '}';
@@ -172,7 +181,8 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
     selectedKeys: this.parseObject.selectedKeys,
     expMap: this.parseObject.expMap,
     orderMap: this.parseObject.orderMap,
-    schemaName: this.root ? this.root.name : undefined
+    schemaName: this.root ? this.root.name : undefined,
+    expandedKeys: []
   }
 
   private handleChangeSelectKeys = (selectedKeys: string[]) => {
@@ -202,21 +212,30 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
   }
   private genOrql = () => {
     const {form: {setFieldsValue}} = this.props;
-    const {op, selectedKeys, expMap, orderMap, schemaName, array} = this.state;
+    const {op, selectedKeys, expandedKeys, expMap, orderMap, schemaName, array} = this.state;
     if (selectedKeys.length == 0) return;
-    // console.log(selectedKeys);
-    const keyTmps: KeyTmp[] = [];
+    console.log(expandedKeys);
+    const selectedKeyTmps: KeyTmp[] = [];
+    const expandedKeyTmps: KeyTmp[] = [];
     // 先切割缓存起来
     selectedKeys.forEach(key => {
       const arr = key.split('.');
-      keyTmps.push({key, arr});
+      selectedKeyTmps.push({key, arr});
+    });
+    expandedKeys.forEach(key => {
+      const arr = key.split('.');
+      expandedKeyTmps.push({key, arr});
     });
     // 排序，避免父节点不存在
-    keyTmps.sort((a, b) => a.arr.length - b.arr.length);
-    // FIXME root用于全选
-    if (keyTmps[0].key != schemaName) {
-      keyTmps.unshift({key: schemaName!, arr: [schemaName!]})
-    }
+    expandedKeyTmps.sort((a, b) => a.arr.length - b.arr.length);
+    // 排序，用于记录全选
+    // selectedKeyTmps.sort((a, b) => a.arr.length - b.arr.length);
+    // // 排序，避免父节点不存在
+    // selectedKeyTmps.sort((a, b) => a.arr.length - b.arr.length);
+    // // FIXME root用于全选
+    // if (selectedKeyTmps[0].key != schemaName) {
+    //   selectedKeyTmps.unshift({key: schemaName!, arr: [schemaName!]})
+    // }
     // 重新拼装成树
     const root: SelectItem = {
       name: schemaName!,
@@ -224,10 +243,40 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
       columns: [],
       children: [],
       exp: expMap[schemaName!],
-      order: orderMap[schemaName!]
+      order: orderMap[schemaName!],
+      selectAll: selectedKeys.indexOf(schemaName!) >= 0
     };
-    for (let i = 1; i < keyTmps.length; i ++) {
-      const keyTmp = keyTmps[i];
+    for (const keyTmp of expandedKeyTmps) {
+      // 获取父节点
+      const parent = this.getParent(root, keyTmp.arr)!;
+      // 类型 array object column
+      const type = keyTmp.arr[0];
+      // 名称
+      const name = keyTmp.arr[keyTmp.arr.length - 1];
+      // 根据key路径把keys exp order放回去
+      const selectAll = selectedKeys.indexOf(keyTmp.key) >= 0;
+      if (type == 'array') {
+        parent.children.push({
+          array: true,
+          name,
+          exp: expMap[keyTmp.key],
+          children: [],
+          columns: [],
+          selectAll
+        });
+      } else if (type == 'object') {
+        parent.children.push({
+          array: false,
+          exp: expMap[keyTmp.key],
+          name,
+          children: [],
+          columns: [],
+          selectAll
+        });
+      }
+    }
+    for (let i = 0; i < selectedKeyTmps.length; i ++) {
+      const keyTmp = selectedKeyTmps[i];
       // 获取父节点
       const parent = this.getParent(root, keyTmp.arr);
       if (!parent) {
@@ -240,24 +289,27 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
       const type = keyTmp.arr[0];
       // 名称
       const name = keyTmp.arr[keyTmp.arr.length - 1];
-      // 根据key路径把keys exp order放回去
-      if (type == 'array') {
-        parent.children.push({
-          array: true,
-          name,
-          exp: expMap[keyTmp.key],
-          children: [],
-          columns: []
-        });
-      } else if (type == 'object') {
-        parent.children.push({
-          array: false,
-          exp: expMap[keyTmp.key],
-          name,
-          children: [],
-          columns: []
-        });
-      } else {
+      // // 根据key路径把keys exp order放回去
+      // if (type == 'array') {
+      //   parent.children.push({
+      //     array: true,
+      //     name,
+      //     exp: expMap[keyTmp.key],
+      //     children: [],
+      //     columns: []
+      //   });
+      // } else if (type == 'object') {
+      //   parent.children.push({
+      //     array: false,
+      //     exp: expMap[keyTmp.key],
+      //     name,
+      //     children: [],
+      //     columns: []
+      //   });
+      // } else {
+      //   parent.columns.push(name);
+      // }
+      if (type == 'column') {
         parent.columns.push(name);
       }
     }
@@ -386,7 +438,8 @@ export default Form.create()(class OrqlApiForm extends React.Component<ApiFormPr
                 orderMap={orderMap}
                 onChangeExpMap={this.handleChangeExpMap}
                 selectedKeys={selectedKeys}
-                onChangeSelectKeys={this.handleChangeSelectKeys}/>
+                onChangeSelectKeys={this.handleChangeSelectKeys}
+                onChangeExpandedKeys={expandedKeys => this.setState({expandedKeys})}/>
             </Col>
           </Row>
         )}
