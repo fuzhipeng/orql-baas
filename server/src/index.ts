@@ -1,7 +1,7 @@
 import start, {ServerOptions} from './server';
-import {configJsonPath, schemaJsonPath, apiJsonPath, plugins, indexJsPath} from './config';
+import {configJsonPath, schemaJsonPath, apiJsonPath, plugins, indexJsPath, pluginJsonPath} from './config';
 
-export {start, configJsonPath, schemaJsonPath, apiJsonPath, plugins, indexJsPath};
+export {start, configJsonPath, schemaJsonPath, apiJsonPath, plugins, indexJsPath, pluginJsonPath};
 
 // const options: ServerOptions = {};
 // options.dev = process.argv.findIndex(arg => arg == '--dev') >= 0;

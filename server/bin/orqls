@@ -1,10 +1,7 @@
 #!/usr/bin/env node
-const path = require('path');
 const fs = require('fs');
 const {argv} = require('yargs');
 const {start, configJsonPath, schemaJsonPath, apiJsonPath, indexJsPath, pluginJsonPath} = require('../dist');
-
-const cwd = process.cwd();
 
 function writeTextSync(path, text) {
   fs.writeFileSync(path, text, {encoding: 'utf-8'});

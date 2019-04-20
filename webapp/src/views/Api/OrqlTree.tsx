@@ -56,21 +56,32 @@ const TreeNodeTitle = (props: TreeNodeTitleProps) => (
   </Popover>
 )
 
-class OrqlTree extends React.Component<OrqlTreeProps> {
+interface IState {
+  expandedKeys: string[];
+}
+
+class OrqlTree extends React.Component<OrqlTreeProps, IState> {
+  state: IState = {
+    expandedKeys: []
+  }
   handleCheck = (keys: any) => {
     const {op, onChangeSelectKeys} = this.props;
     // console.log(keys.checked);
     onChangeSelectKeys(keys.checked);
   }
+  handleExpand = (expandedKeys: string[]) => {
+    this.setState({expandedKeys});
+  }
   renderTree() {
     const {schemas, schemaName, selectedKeys, expMap, orderMap, onChangeExpMap} = this.props;
     if (!schemaName) return;
+    const {expandedKeys} = this.state;
     const schema = schemas.find(schema => schema.name == schemaName)!;
     return (
       <Tree
         checkable
-        defaultExpandAll
         checkStrictly
+        onExpand={this.handleExpand}
         checkedKeys={selectedKeys}
         onCheck={keys => this.handleCheck(keys)}>
         <TreeNode key={schema.name} title={(
@@ -90,7 +101,7 @@ class OrqlTree extends React.Component<OrqlTreeProps> {
           {schema.associations.map(association => {
             const array = isArray(association);
             const key = `${array ? 'array' : 'object'}.${schema.name}.${association.name}`;
-            return selectedKeys.indexOf(key) >= 0
+            return expandedKeys.indexOf(key) >= 0
               ? this.renderRefTree(
                 schema.name,
                 isArray(association),
@@ -98,7 +109,7 @@ class OrqlTree extends React.Component<OrqlTreeProps> {
                 association.refName)
               : (
                 <TreeNode
-                  isLeaf
+                  isLeaf={false}
                   key={key}
                   title={(
                     <TreeNodeTitle
@@ -117,6 +128,7 @@ class OrqlTree extends React.Component<OrqlTreeProps> {
   }
   renderRefTree(parentKey: string, array: boolean, refName: string, schemaName: string) {
     const {schemas, selectedKeys, expMap, orderMap, onChangeExpMap} = this.props;
+    const {expandedKeys} = this.state;
     const schema = schemas.find(schema => schema.name == schemaName)!;
     const key = `${array ? 'array' : 'object'}.${parentKey}.${refName}`;
     return (
@@ -137,7 +149,7 @@ class OrqlTree extends React.Component<OrqlTreeProps> {
         {schema.associations.map(association => {
           const childKey = `${isArray(association) ? 'array' : 'object'}.${parentKey}.${refName}.${association.name}`;
 
-          if (selectedKeys.indexOf(childKey) >= 0) {
+          if (expandedKeys.indexOf(childKey) >= 0) {
             return this.renderRefTree(
               `${parentKey}.${refName}`,
               isArray(association),
@@ -146,6 +158,7 @@ class OrqlTree extends React.Component<OrqlTreeProps> {
           }
           return (
             <TreeNode
+              isLeaf={false}
               key={childKey}
               title={association.name}>
             </TreeNode>

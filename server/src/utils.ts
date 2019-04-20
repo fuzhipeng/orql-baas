@@ -7,6 +7,7 @@ export async function readJson(path: string) {
 }
 
 export function readJsonSync(path: string) {
+  if (!fs.existsSync(path)) return undefined;
   const json = fs.readFileSync(path, {encoding: 'utf-8'});
   return JSON.parse(json as string);
 }
