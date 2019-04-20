@@ -92,7 +92,7 @@ function orqlExpToString(orqlExp: OrqlExp): string {
       if (orqlExp.right instanceof OrqlNull) {
         exp += 'null';
       } else {
-        exp += orqlExp.right.toString();
+        exp += orqlExp.right.value.toString();
       }
     } else if (orqlExp.right instanceof OrqlColumn) {
       exp += orqlExp.right.name;
