@@ -31,6 +31,7 @@ interface TreeNodeTitleProps {
   defaultExp?: string;
   defaultOrder?: string;
   onChange: (exp) => void;
+  selectAll: boolean;
 }
 
 export function getExpAndOrder(exp?: string, order?: string) {
@@ -51,7 +52,7 @@ const TreeNodeTitle = (props: TreeNodeTitleProps) => (
     )}
     title="条件"
     trigger="click">
-    {props.title}
+    {props.title} {props.selectAll && '全选'}
     <span style={{position: 'absolute'}}>{getExpAndOrder(props.defaultExp, props.defaultOrder)}</span>
   </Popover>
 )
@@ -77,6 +78,7 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
     if (!schemaName) return;
     const {expandedKeys} = this.state;
     const schema = schemas.find(schema => schema.name == schemaName)!;
+    const selectAll = selectedKeys.indexOf(schemaName) >= 0;
     return (
       <Tree
         checkable
@@ -91,13 +93,17 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
             defaultExp={expMap[schemaName]}
             defaultOrder={orderMap[schemaName]}
             schema={schema}
+            selectAll={selectAll}
             title={schemaName} />
         )}>
-          {schema.columns.map(column => (
-            <TreeNode
-              key={`column.${schema.name}.${column.name}`}
-              title={column.name}/>
-          ))}
+          {schema.columns.map(column => {
+            const key = `column.${schema.name}.${column.name}`;
+            return (
+              <TreeNode
+                key={key}
+                title={column.name + (selectAll && selectedKeys.indexOf(key) >= 0 ? '忽略' : '')}/>
+            );
+          })}
           {schema.associations.map(association => {
             const array = isArray(association);
             const key = `${array ? 'array' : 'object'}.${schema.name}.${association.name}`;
@@ -118,7 +124,8 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
                       path={key}
                       onChange={exp => onChangeExpMap({...expMap, [key]: exp})}
                       title={association.name}
-                      schema={schemas.find(schema => schema.name == association.refName)!}/>
+                      schema={schemas.find(schema => schema.name == association.refName)!}
+                      selectAll={selectedKeys.indexOf(key) >= 0}/>
                   )} />
               )
           })}
@@ -131,6 +138,7 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
     const {expandedKeys} = this.state;
     const schema = schemas.find(schema => schema.name == schemaName)!;
     const key = `${array ? 'array' : 'object'}.${parentKey}.${refName}`;
+    const selectAll = selectedKeys.indexOf(key) >= 0;
     return (
       <TreeNode key={key} title={(
         <TreeNodeTitle
@@ -139,13 +147,17 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
           defaultOrder={orderMap[key]}
           onChange={exp => onChangeExpMap({...expMap, [key]: exp})}
           title={refName}
-          schema={schema}/>
+          schema={schema}
+          selectAll={selectAll}/>
       )}>
-        {schema.columns.map(column => (
-          <TreeNode
-            key={`column.${parentKey}.${refName}.${column.name}`}
-            title={column.name}/>
-        ))}
+        {schema.columns.map(column => {
+          const key = `column.${parentKey}.${refName}.${column.name}`;
+          return (
+            <TreeNode
+              key={key}
+              title={column.name + (selectAll && selectedKeys.indexOf(key) >= 0 ? '忽略' : '')}/>
+          );
+        })}
         {schema.associations.map(association => {
           const childKey = `${isArray(association) ? 'array' : 'object'}.${parentKey}.${refName}.${association.name}`;
 
