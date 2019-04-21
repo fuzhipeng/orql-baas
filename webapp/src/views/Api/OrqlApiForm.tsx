@@ -3,7 +3,7 @@ import React from 'react';
 import {FormComponentProps} from 'antd/lib/form';
 import {FormItemLayout, OrqlOps} from '../../config';
 import {Api, Association, Schema} from '../../beans';
-import OrqlTree from './OrqlTree';
+import OrqlTree from '../../components/OrqlTree';
 
 const { TextArea } = Input;
 

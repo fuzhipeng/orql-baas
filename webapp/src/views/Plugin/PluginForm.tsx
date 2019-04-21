@@ -3,7 +3,7 @@ import {Col, Form, Input, Row, Select, Switch} from 'antd';
 import {FormComponentProps} from 'antd/lib/form';
 import {FunOption, MatchType, Plugin, PluginConfig, Schema} from '../../beans';
 import {FormItemLayout} from '../../config';
-import OrqlTree from '../Api/OrqlTree';
+import OrqlTree from '../../components/OrqlTree';
 
 export interface FunApiFormProps extends FormComponentProps {
   schemas: Schema[];

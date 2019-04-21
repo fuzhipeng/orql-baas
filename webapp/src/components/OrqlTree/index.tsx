@@ -1,10 +1,11 @@
 import React from 'react';
-import {Col, Form, InputNumber, Popover, Row, Select, Switch, Tree} from 'antd';
+import {Col, Form, InputNumber, Row, Select, Switch, Tree} from 'antd';
 import {Association, Schema} from '../../beans';
-import QueryBuilder from '../../components/QueryBuilder';
 import {OrqlOps} from '../../config';
 import Parser from 'orql-parser';
-import {OrqlNode, OrqlExp, OrqlItem, OrqlLogicExp, OrqlLogicOp, OrqlNestExp, OrqlCompareExp, OrqlParam, OrqlValue, OrqlColumn, OrqlNull, OrqlOrder, OrqlAllItem} from 'orql-parser/lib/OrqlNode';
+import {OrqlNode, OrqlItem, OrqlAllItem} from 'orql-parser/lib/OrqlNode';
+import {orqlExpToString, orqlOrdersToString, selectItemToOrql} from './util';
+import TreeNodeTitle from './TreeNodeTitle';
 
 const {TreeNode} = Tree;
 
@@ -29,17 +30,7 @@ function isArray(association: Association) {
   return association.type == 'hasMany' || association.type == 'belongsToMany';
 }
 
-interface TreeNodeTitleProps {
-  title: string;
-  schema: Schema;
-  path: string;
-  defaultExp?: string;
-  defaultOrder?: string;
-  onChange: (exp) => void;
-  selectAll: boolean;
-}
-
-interface SelectItem {
+export interface SelectItem {
   name: string;
   isArray: boolean;
   exp?: string;
@@ -47,84 +38,6 @@ interface SelectItem {
   columns: string[];
   children: SelectItem[];
   selectAll: boolean;
-}
-
-export function getExpAndOrder(exp?: string, order?: string) {
-  if (exp && order) return `(${exp} ${order})`;
-  if (exp) return `(${exp})`;
-  if (order) return `(${order})`;
-  return '';
-}
-
-const TreeNodeTitle = (props: TreeNodeTitleProps) => (
-  <Popover
-    placement="right"
-    content={(
-      <QueryBuilder
-        defaultExp={props.defaultExp}
-        schema={props.schema}
-        onChange={props.onChange}/>
-    )}
-    title="条件"
-    trigger="click">
-    {props.title} {props.selectAll && '全选'}
-    <span style={{position: 'absolute'}}>{getExpAndOrder(props.defaultExp, props.defaultOrder)}</span>
-  </Popover>
-)
-
-// orql表达式转string
-function orqlExpToString(orqlExp: OrqlExp): string {
-  if (orqlExp instanceof OrqlNestExp) {
-    return '(' + orqlExpToString(orqlExp) + ')';
-  }
-  if (orqlExp instanceof OrqlLogicExp) {
-    const left = orqlExpToString(orqlExp.left);
-    const op = orqlExp.op == OrqlLogicOp.And ? '&&' : '||';
-    const right = orqlExpToString(orqlExp.right);
-    return `${left} ${op} ${right}`;
-  }
-  if (orqlExp instanceof OrqlCompareExp) {
-    let exp = orqlExp.left.name;
-    exp += ` ${orqlExp.op} `;
-    if (orqlExp.right instanceof OrqlParam) {
-      exp += '$' + orqlExp.right.name;
-    } else if (orqlExp.right instanceof OrqlValue) {
-      if (orqlExp.right instanceof OrqlNull) {
-        exp += 'null';
-      } else {
-        exp += orqlExp.right.value.toString();
-      }
-    } else if (orqlExp.right instanceof OrqlColumn) {
-      exp += orqlExp.right.name;
-    }
-    return exp;
-  }
-  throw new Error('');
-}
-
-// orql orders转string
-function orqlOrdersToString(orders: OrqlOrder[]): string {
-  return 'order ' + orders.map(order => `${order.columns.map(column => column.name).join(' ')} ${order.sort}`).join(', ');
-}
-
-// select item转orql
-function selectItemToOrql(selectItem: SelectItem): string {
-  let orql = selectItem.name;
-  orql += getExpAndOrder(selectItem.exp, selectItem.order);
-  const childOrqlArr: string[] = [];
-  if (selectItem.selectAll) {
-    childOrqlArr.push('*');
-    childOrqlArr.push(...selectItem.columns.map(column => '!' + column));
-  } else {
-    childOrqlArr.push(...selectItem.columns);
-  }
-  childOrqlArr.push(...selectItem.children.map(child => selectItemToOrql(child)));
-  if (childOrqlArr.length > 0) {
-    const start = selectItem.isArray ? ': [' : ': {';
-    const end = selectItem.isArray ? ']' : '}';
-    orql += start + childOrqlArr.join(', ') + end;
-  }
-  return orql;
 }
 
 export interface OrqlTreeProps {
@@ -339,7 +252,7 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
     }
     const orql = op + ' ' + selectItemToOrql(root);
     this.orql = orql;
-    console.log('gen orql: ' + orql);
+    // console.log('gen orql: ' + orql);
     this.props.onChange(orql);
   }
 
@@ -358,7 +271,7 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
           orderMap: parseObject.orderMap
         });
       } catch (e) {
-        console.log('parse error');
+        // console.log('parse error');
       }
     }
   }
