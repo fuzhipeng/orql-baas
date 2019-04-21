@@ -15,7 +15,8 @@ interface JsonResponse<T> {
 }
 
 export async function httpGet<T>(url: string, params?: any): Promise<JsonResponse<T>> {
-  const res = await instance.get(url, params);
+  if (params) console.log(params);
+  const res = await instance.get(url, {params});
   return res.data;
 }
 

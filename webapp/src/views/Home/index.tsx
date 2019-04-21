@@ -25,9 +25,13 @@ const DropMenu = () => (
   </Menu>
 )
 
-const ItemLink = (props: {label: string, to: string}) => (
-  <Link to={props.to} style={{fontSize: 16, color: '#fff', marginRight: 20, textDecoration: 'none'}}>{props.label}</Link>
-)
+const ItemLink = (props: {label: string, to?: string, href?: string}) => {
+  const style = {fontSize: 16, color: '#fff', marginRight: 20, textDecoration: 'none'};
+  if (props.to) {
+    return <Link to={props.to} style={style}>{props.label}</Link>
+  }
+  return <a href={props.href} target="_blank" style={style}>{props.label}</a>
+}
 
 const AppMenuView = (props: {label: string, onClick?: () => void, subMenus?: AppMenu[]}) => {
   if (props.subMenus) {
@@ -72,7 +76,8 @@ class HomeView extends React.Component<IProps> {
             <ItemLink label="schema" to="/schema"/>
             <ItemLink label="api" to="/api"/>
             <ItemLink label="插件" to="/plugin"/>
-            <ItemLink label="文件" to="/file" />
+            {/*<ItemLink label="文件" to="/file" />*/}
+            <ItemLink label="教程" href="http://orql.github.com/orql-baas"/>
             <ItemLink label="设置" to="/setting" />
           </div>
         </div>

@@ -18,10 +18,10 @@ const ColumnMenu = (props: ColumnMenuProps) => (
       <ColumnMenuText text="删除" />
     </Menu.Item>
     <Menu.Divider />
-    <Menu.Item key="aa">
+    <Menu.Item key="asc" onClick={() => props.onClick('asc')}>
       <ColumnMenuText text="升序" />
     </Menu.Item>
-    <Menu.Item key="bb">
+    <Menu.Item key="desc" onClick={() => props.onClick('desc')}>
       <ColumnMenuText text="降序"/>
     </Menu.Item>
   </Menu>

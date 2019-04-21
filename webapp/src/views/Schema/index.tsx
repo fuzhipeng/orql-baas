@@ -5,12 +5,12 @@ import AppStore from '../../stores/AppStore';
 import {Modal, Table, Icon, Dropdown} from 'antd';
 import SchemaStore from '../../stores/SchemaStore';
 import {Association, Schema} from '../../beans';
-import {FormComponentProps} from 'antd/lib/form';
 import {ColumnProps} from 'antd/lib/table';
 import SchemaForm from './SchemaForm';
 import AssociationForm from './AssociationForm';
 import ColumnForm from './ColumnForm';
 import ColumnMenu from './ColumnMenu';
+import {httpGetWithData} from '../../utils/network';
 
 interface IProps extends RouteComponentProps{
   appStore: AppStore;
@@ -23,6 +23,8 @@ interface IState {
   currentAssociationName?: string;
   showDialog: 'createSchema' | 'createColumn' | 'createAssociation' | 'updateSchema' | 'updateColumn' | 'updateAssociation' | 'none';
   newAssociation?: Association;
+  dataSource: any;
+  order?: string;
 }
 
 const SchemaTitle = (props: {selected: boolean, name: string, onClick: () => void}) => {
@@ -43,7 +45,7 @@ const SchemaTitle = (props: {selected: boolean, name: string, onClick: () => voi
 
 @inject('appStore', 'schemaStore')
 @observer
-class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
+class SchemaView extends React.Component<IProps, IState> {
   private menus = [{
     label: '新建',
     onClick: () => this.setState({
@@ -84,16 +86,15 @@ class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
   private createAssociationForm?: any;
   private updateAssociationForm?: any;
   state: IState = {
-    showDialog: 'none'
+    showDialog: 'none',
+    dataSource: []
   }
   async componentDidMount() {
     const {schemaStore, appStore} = this.props;
     appStore.setAppMenus(this.menus);
     await schemaStore.load();
     if (schemaStore.schemas.length > 0) {
-      this.setState({
-        currentSchemaName: schemaStore.schemas[0].name
-      });
+      await this.handleChangeSchema(schemaStore.schemas[0].name);
     }
   }
   private getCurrentSchema = () => {
@@ -219,6 +220,28 @@ class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
       currentSchemaName: schemas[index].name
     });
   }
+  handleChangeSchema = async (name: string) => {
+    const schema = this.props.schemaStore.schemas.find(schema => schema.name == name);
+    if (!schema) return;
+    const dataSource = schema.columns.length > 0
+      ?  await httpGetWithData('/_edit/queryData', {schema: schema.name})
+      : [];
+    this.setState({
+      currentSchemaName: name,
+      dataSource
+    });
+  }
+  handleChangeOrder = async (order: string) => {
+    const {currentSchemaName} = this.state;
+    const schema = this.props.schemaStore.schemas.find(schema => schema.name == currentSchemaName);
+    if (!schema) return;
+    const dataSource = schema.columns.length > 0
+      ?  await httpGetWithData('/_edit/queryData', {schema: schema.name, order})
+      : [];
+    this.setState({
+      dataSource
+    });
+  }
   renderCreateSchemaDialog() {
     return (
       <Modal
@@ -317,7 +340,7 @@ class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
   }
   renderTable() {
     const {schemaStore} = this.props;
-    const {currentSchemaName} = this.state;
+    const {currentSchemaName, dataSource} = this.state;
     if (!currentSchemaName) return;
     const schema = schemaStore.getSchemaByName(currentSchemaName);
     if (!schema) return;
@@ -342,6 +365,10 @@ class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
                     content: `是否删除${schema.name} ${column.name}列`,
                     onOk: () => this.handleDeleteColumn(schema.name, column.name)
                   });
+                  break;
+                case 'asc':
+                case 'desc':
+                  this.handleChangeOrder(`order ${column.name} ${key}`);
                   break;
               }
             }} />}
@@ -389,7 +416,8 @@ class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
     return (
       <Table<any>
         onHeaderRow={(column, index) => index}
-        dataSource={[]}
+        dataSource={dataSource}
+        rowKey={(record, index) => index.toString()}
         columns={columns}
         size="small" />
     );
@@ -411,7 +439,7 @@ class SchemaView extends React.Component<IProps & FormComponentProps, IState> {
               key={index}
               selected={schema.name == currentSchemaName}
               name={schema.name}
-              onClick={() => this.setState({currentSchemaName: schema.name})}/>
+              onClick={() => this.handleChangeSchema(schema.name)}/>
           ))}
         </div>
         <div style={{flex: 1, marginTop: 5}}>

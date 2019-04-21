@@ -298,3 +298,18 @@ router.put('/_edit/config/orql', async (ctx) => {
   await writeJson(configJsonPath, config);
   responseSuccess(ctx);
 });
+
+// 查询数据
+router.get('/_edit/queryData', async (ctx) => {
+  if (!orqlExecutor) {
+    responseError(ctx, 'db not connect');
+    return;
+  }
+  const session = await orqlExecutor.newSession();
+  const {schema, order} = ctx.request.query;
+  if (schema) {
+    const result = await session.query(`query ${schema}(${order ? order : ''}): [*]`, {}, {limit: 100});
+    responseSuccess(ctx, result);
+  }
+  await session.close();
+});

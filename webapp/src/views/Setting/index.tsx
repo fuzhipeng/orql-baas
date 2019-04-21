@@ -74,7 +74,9 @@ class SettingView extends React.Component<IProps, IState> {
           backgroundColor: '#fefefe',
           borderRight: '1px solid #ebedf0'
         }}>
+          <SettingTitle selected={setting == '服务器'} name="服务器" onClick={() => this.setState({setting: '服务器'})}/>
           <SettingTitle selected={setting == '数据库'} name="数据库" onClick={() => this.setState({setting: '数据库'})}/>
+          <SettingTitle selected={setting == '文件'} name="文件" onClick={() => this.setState({setting: '文件'})}/>
         </div>
         <div style={{flex: 1}}>
           {this.renderSetting()}
