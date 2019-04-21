@@ -69,7 +69,8 @@ export interface Plugin {
 export enum OptionType {
   Radio = 'radio',
   Text = 'text',
-  Select = 'select'
+  Select = 'select',
+  Orql = 'orql'
 }
 
 export type FunOptions = {[key: string]: FunOption}

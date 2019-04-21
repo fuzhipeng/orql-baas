@@ -245,6 +245,16 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
     }, this.genOrql);
   }
 
+  handleChangeSchema = (name: string) => {
+    this.setState({
+      schemaName: name,
+      expandedKeys: [name],
+      selectedKeys: [],
+      expMap: {},
+      orderMap: {}
+    });
+  }
+
   private getParent = (root: SelectItem, arr: string[]): SelectItem | undefined => {
     let tmp = root;
     let i = 2;
@@ -478,7 +488,7 @@ class OrqlTree extends React.Component<OrqlTreeProps, IState> {
           </Col>
           <Col span={6}>
             <Form.Item label="实体">
-              <Select<string> value={schemaName} onSelect={schemaName => this.setState({schemaName})}>
+              <Select<string> value={schemaName} onSelect={this.handleChangeSchema}>
                 {schemas.map(schema => (
                   <Select.Option key={schema.name} value={schema.name}>{schema.name}</Select.Option>
                 ))}

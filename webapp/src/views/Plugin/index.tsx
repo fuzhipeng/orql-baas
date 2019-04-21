@@ -6,7 +6,8 @@ import {Modal} from 'antd';
 import ApiStore from '../../stores/ApiStore';
 import PluginForm from './PluginForm';
 import PluginStore from '../../stores/PluginStore';
-import {Api, PluginConfig} from '../../beans';
+import {Api, PluginConfig, Schema} from '../../beans';
+import SchemaStore from '../../stores/SchemaStore';
 
 const PluginTitle = (props: { selected: boolean, config: PluginConfig, onClick: () => void }) => {
   return (
@@ -27,6 +28,7 @@ interface IProps extends RouteComponentProps{
   appStore: AppStore;
   apiStore: ApiStore;
   pluginStore: PluginStore;
+  schemaStore: SchemaStore;
 }
 
 type ShowDialog = 'createPlugin' | 'updatePlugin' | 'none';
@@ -36,7 +38,7 @@ interface IState {
   currentPluginIndex?: number;
 }
 
-@inject('appStore', 'apiStore', 'pluginStore')
+@inject('appStore', 'apiStore', 'pluginStore', 'schemaStore')
 @observer
 class PluginView extends React.Component<IProps, IState> {
   private menus = [{
@@ -67,10 +69,11 @@ class PluginView extends React.Component<IProps, IState> {
   private createPluginForm?: any;
   private updatePluginForm?: any;
   async componentDidMount() {
-    const {appStore, pluginStore, apiStore} = this.props;
+    const {appStore, pluginStore, apiStore, schemaStore} = this.props;
     appStore.setAppMenus(this.menus);
     await apiStore.load();
     await pluginStore.load();
+    await schemaStore.load();
     if (pluginStore.configs.length > 0) {
       this.setState({
         currentPluginIndex: 0
@@ -118,26 +121,29 @@ class PluginView extends React.Component<IProps, IState> {
     });
   }
   renderCreatePluginDialog() {
-    const {apiStore: {groups}, pluginStore: {plugins}} = this.props;
+    const {apiStore: {groups}, pluginStore: {plugins}, schemaStore: {schemas}} = this.props;
     const {showDialog} = this.state;
     return (
       <Modal
         title="新建插件"
         okText="确定"
         cancelText="取消"
+        width={800}
+        style={{top: 20}}
         destroyOnClose={true}
         onCancel={() => this.setState({showDialog: 'none'})}
         onOk={this.handleCreatePlugin}
         visible={showDialog == 'createPlugin'}>
         <PluginForm
           wrappedComponentRef={ref => this.createPluginForm = ref}
+          schemas={schemas}
           groups={groups}
           plugins={plugins} />
       </Modal>
     );
   }
   renderUpdatePluginDialog() {
-    const {apiStore: {groups}, pluginStore: {plugins, configs}} = this.props;
+    const {apiStore: {groups}, pluginStore: {plugins, configs}, schemaStore: {schemas}} = this.props;
     const {showDialog, currentPluginIndex} = this.state;
     if (currentPluginIndex == undefined) return;
     const config = configs[currentPluginIndex];
@@ -146,6 +152,8 @@ class PluginView extends React.Component<IProps, IState> {
         title="新建插件"
         okText="确定"
         cancelText="取消"
+        width={800}
+        style={{top: 20}}
         destroyOnClose={true}
         onCancel={() => this.setState({showDialog: 'none'})}
         onOk={this.handleUpdatePlugin}
@@ -153,6 +161,7 @@ class PluginView extends React.Component<IProps, IState> {
         <PluginForm
           wrappedComponentRef={ref => this.updatePluginForm = ref}
           config={config}
+          schemas={schemas}
           groups={groups}
           plugins={plugins} />
       </Modal>

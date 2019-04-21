@@ -1,10 +1,12 @@
 import React from 'react';
-import {Col, Form, Input, Row, Select} from 'antd';
+import {Col, Form, Input, Row, Select, Switch} from 'antd';
 import {FormComponentProps} from 'antd/lib/form';
-import {FunOption, MatchType, Plugin, PluginConfig} from '../../beans';
+import {FunOption, MatchType, Plugin, PluginConfig, Schema} from '../../beans';
 import {FormItemLayout} from '../../config';
+import OrqlTree from '../Api/OrqlTree';
 
 export interface FunApiFormProps extends FormComponentProps {
+  schemas: Schema[];
   groups: string[];
   plugins: Plugin[];
   config?: PluginConfig;
@@ -13,6 +15,7 @@ export interface FunApiFormProps extends FormComponentProps {
 interface IState {
   pluginName?: string;
   matchType?: MatchType;
+  orqlVisual?: string;
 }
 
 export default Form.create()(class PluginForm extends React.Component<FunApiFormProps, IState> {
@@ -21,7 +24,8 @@ export default Form.create()(class PluginForm extends React.Component<FunApiForm
     matchType: MatchType.Url
   }
   renderOption(option: FunOption, name: string, options?: any) {
-    const {form: {getFieldDecorator, getFieldsValue}, config} = this.props;
+    const {form: {getFieldDecorator, getFieldsValue, setFieldsValue}, config, schemas} = this.props;
+    const {orqlVisual} = this.state;
     if (option.dep) {
       const arr = option.dep.split('.');
       const field = '_' + arr[0];
@@ -32,27 +36,54 @@ export default Form.create()(class PluginForm extends React.Component<FunApiForm
     switch (option.type) {
       case 'text':
         return (
-          <Form.Item label={name}>
-            {getFieldDecorator(`_${name}`, {
-              rules: [{ required: option.required}],
-              initialValue: defaultValue
-            })(<Input />)}
-          </Form.Item>
+          <Col key={name} span={12}>
+            <Form.Item label={name}>
+              {getFieldDecorator(`_${name}`, {
+                rules: [{ required: option.required}],
+                initialValue: defaultValue
+              })(<Input />)}
+            </Form.Item>
+          </Col>
         );
       case 'select':
         return (
-          <Form.Item label={name}>
-            {getFieldDecorator(`_${name}`, {
-              rules: [{ required: option.required }],
-              initialValue: defaultValue
-            })(
-              <Select>
-                {option.values!.map(value => (
-                  <Select.Option key={value} value={value}>{value}</Select.Option>
-                ))}
-              </Select>
+          <Col key={name} span={12}>
+            <Form.Item label={name}>
+              {getFieldDecorator(`_${name}`, {
+                rules: [{ required: option.required }],
+                initialValue: defaultValue
+              })(
+                <Select>
+                  {option.values!.map(value => (
+                    <Select.Option key={value} value={value}>{value}</Select.Option>
+                  ))}
+                </Select>
+              )}
+            </Form.Item>
+          </Col>
+        );
+      case 'orql':
+        return (
+          <Row key={name}>
+            <Col span={12}>
+              <Form.Item label={name}>
+                {getFieldDecorator(`_${name}`, {
+                  rules: [{ required: option.required}],
+                  initialValue: defaultValue
+                })(<Input />)}
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="配置">
+                <Switch checked={orqlVisual == name} onChange={visual => this.setState({orqlVisual: visual? name: undefined})} />
+              </Form.Item>
+            </Col>
+            {orqlVisual == name && (
+              <OrqlTree
+                schemas={schemas}
+                onChange={orql => setFieldsValue({[`_${name}`]: orql})}/>
             )}
-          </Form.Item>
+          </Row>
         );
     }
   }
@@ -63,8 +94,8 @@ export default Form.create()(class PluginForm extends React.Component<FunApiForm
     const options = config && config.options ? JSON.parse(config.options) : undefined;
     const plugin = plugins.find(plugin => plugin.name == pluginName);
     if (plugin == undefined || plugin.options == undefined) return;
-    return Object.keys(plugin.options).
-    map(name => <Col span={12} key={name}>{this.renderOption(plugin.options![name], name, options)}</Col>);
+    return Object.keys(plugin.options)
+      .map(name => this.renderOption(plugin.options![name], name, options));
   }
   render() {
     const {form: {getFieldDecorator}, groups, plugins, config} = this.props;
