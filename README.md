@@ -29,7 +29,3 @@ api
 api编辑
 
 ![api-edit](./docs/images/orql-baas-api-edit.png)
-
-插件
-
-![plugin](./docs/images/orql-baas-plugin.png)
